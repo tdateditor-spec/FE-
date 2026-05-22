@@ -7,8 +7,9 @@ import {
   Send, ThumbsUp, Star, Paperclip, GraduationCap, PlayCircle,
   ChevronLeft, User, TrendingUp, Camera, Edit3, Shield,
   Target, Flame, Calendar, Trophy, ShieldCheck, X, Menu,
-  LayoutDashboard, PlaySquare, FileVideo,
+  LayoutDashboard, PlaySquare, FileVideo, Eye, EyeOff, KeyRound,
 } from 'lucide-react'
+import { api } from '../lib/api'
 
 /* ─── Data ────────────────────────────────────────────────────────────────── */
 const chapters = [
@@ -348,6 +349,140 @@ function LessonThumb({ lesson, isActive, isDone, isLocked }) {
   )
 }
 
+/* ─── Profile Modal ──────────────────────────────────────────────────────── */
+function PassInput({ label, value, onChange, placeholder }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium text-slate-400">{label}</label>
+      <div className="relative">
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none transition-all focus:border-blue-500/60 focus:bg-blue-500/[0.06]"
+        />
+        <button type="button" tabIndex={-1} onClick={() => setShow(v => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+          {show ? <EyeOff size={14}/> : <Eye size={14}/>}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ProfileModal({ open, onClose, user }) {
+  const [oldPass, setOldPass]       = useState('')
+  const [newPass, setNewPass]       = useState('')
+  const [confirmPass, setConfirm]   = useState('')
+  const [loading, setLoading]       = useState(false)
+  const [err, setErr]               = useState('')
+  const [success, setSuccess]       = useState(false)
+
+  // Reset khi đóng
+  useEffect(() => {
+    if (!open) { setTimeout(() => { setOldPass(''); setNewPass(''); setConfirm(''); setErr(''); setSuccess(false) }, 300) }
+  }, [open])
+
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setErr('')
+    if (newPass.length < 6)        { setErr('Mật khẩu mới phải ít nhất 6 ký tự'); return }
+    if (newPass !== confirmPass)    { setErr('Mật khẩu xác nhận không khớp'); return }
+    setLoading(true)
+    try {
+      await api.changePassword(newPass, oldPass)
+      setSuccess(true)
+      setOldPass(''); setNewPass(''); setConfirm('')
+    } catch (e) {
+      setErr(e.message || 'Có lỗi xảy ra')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open) return null
+
+  // Lấy chữ cái đầu tên
+  const initials = (user?.name || 'U').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase()
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className="relative w-full max-w-[420px] rounded-2xl border border-white/[0.08] bg-[#141520] shadow-[0_0_60px_rgba(0,0,0,0.6)] overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
+          <div className="flex items-center gap-2">
+            <KeyRound size={16} className="text-blue-400"/>
+            <span className="text-sm font-semibold text-white">Hồ sơ & Bảo mật</span>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+            <X size={18}/>
+          </button>
+        </div>
+
+        <div className="p-6">
+          {/* Avatar + info */}
+          <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+            <div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center text-base font-bold text-white flex-shrink-0">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{user?.name || 'Học Viên VFS'}</p>
+              <p className="text-xs text-slate-500 truncate mt-0.5">{user?.email || ''}</p>
+              <span className="inline-block mt-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                Đang hoạt động
+              </span>
+            </div>
+          </div>
+
+          {/* Đổi mật khẩu */}
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Đổi mật khẩu</p>
+
+          {success ? (
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] p-4 text-center">
+              <p className="text-sm font-semibold text-emerald-400 mb-1">✓ Đổi mật khẩu thành công!</p>
+              <p className="text-xs text-slate-400">Mật khẩu mới đã được lưu.</p>
+              <button onClick={() => setSuccess(false)}
+                className="mt-3 text-xs text-slate-500 hover:text-slate-300 transition-colors underline">
+                Đổi lại
+              </button>
+            </motion.div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <PassInput label="Mật khẩu hiện tại" value={oldPass} onChange={e => setOldPass(e.target.value)} placeholder="Mật khẩu đang dùng"/>
+              <PassInput label="Mật khẩu mới" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Ít nhất 6 ký tự"/>
+              <PassInput label="Xác nhận mật khẩu mới" value={confirmPass} onChange={e => setConfirm(e.target.value)} placeholder="Nhập lại mật khẩu mới"/>
+
+              {err && (
+                <p className="text-xs text-red-400 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 py-2">{err}</p>
+              )}
+
+              <button type="submit" disabled={loading}
+                className="mt-1 w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                {loading ? '⏳ Đang lưu...' : 'Cập nhật mật khẩu'}
+              </button>
+            </form>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 /* ─── Dashboard ───────────────────────────────────────────────────────────── */
 export function Dashboard({ onLogout, onAdmin }) {
   const defaultLesson       = unlocked.find(l=>!l.done)||unlocked[0]
@@ -356,7 +491,20 @@ export function Dashboard({ onLogout, onAdmin }) {
   const [doneIds, setDoneIds]           = useState(new Set(allLessons.filter(l=>l.done).map(l=>l.id)))
   const [openChapters, setOpenChapters] = useState({ C1:true, C2:true, C3:false })
   const [avatarOpen, setAvatarOpen]     = useState(false)
+  const [profileOpen, setProfileOpen]   = useState(false)
+  const [user, setUser]                 = useState(null)
   const avatarRef = useRef(null)
+
+  useEffect(() => {
+    // Lấy thông tin user từ token
+    try {
+      const token = localStorage.getItem('vfs_token')
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        setUser({ name: payload.name, email: payload.email })
+      }
+    } catch {}
+  }, [])
 
   useEffect(() => {
     if (!avatarOpen) return
@@ -555,19 +703,25 @@ export function Dashboard({ onLogout, onAdmin }) {
               <button ref={avatarRef}
                 onClick={()=>setAvatarOpen(v=>!v)}
                 className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-[12px] font-bold text-white hover:bg-blue-500 transition-colors ml-1">
-                H
+                {user ? user.name.split(' ').map(w=>w[0]).slice(-2).join('').toUpperCase() : 'U'}
               </button>
               {avatarOpen && (
                 <div style={{
                   position:'absolute', top:'calc(100% + 8px)', right:0, zIndex:9999,
                   background:'#1e2030', border:'1px solid rgba(255,255,255,0.1)',
                   borderRadius:'0.75rem', boxShadow:'0 20px 60px rgba(0,0,0,0.5)',
-                  overflow:'hidden', width:'200px',
+                  overflow:'hidden', width:'210px',
                 }}>
                   <div style={{padding:'12px 14px', borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
-                    <p style={{fontSize:13, fontWeight:600, color:'#f1f5f9'}}>Học Viên VFS</p>
-                    <p style={{fontSize:11, color:'#475569', marginTop:2}}>hocvien@gmail.com</p>
+                    <p style={{fontSize:13, fontWeight:600, color:'#f1f5f9'}}>{user?.name || 'Học Viên VFS'}</p>
+                    <p style={{fontSize:11, color:'#475569', marginTop:2}}>{user?.email || ''}</p>
                   </div>
+                  <button onClick={()=>{setAvatarOpen(false); setProfileOpen(true)}}
+                    style={{display:'flex',width:'100%',alignItems:'center',gap:10,padding:'10px 14px',fontSize:12,color:'#94a3b8',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}
+                    onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+                    onMouseLeave={e=>e.currentTarget.style.background='none'}>
+                    <User size={13}/> Hồ sơ & Đổi mật khẩu
+                  </button>
                   {onAdmin && (
                     <button onClick={()=>{setAvatarOpen(false);onAdmin()}}
                       style={{display:'flex',width:'100%',alignItems:'center',gap:10,padding:'10px 14px',fontSize:12,color:'#a78bfa',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}
@@ -685,6 +839,9 @@ export function Dashboard({ onLogout, onAdmin }) {
           </div>
         </div>
       </div>
+
+      {/* Profile Modal */}
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} user={user}/>
     </div>
   )
 }
