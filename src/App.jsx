@@ -85,10 +85,18 @@ export default function App() {
   const openModal = () => setModalOpen(true)
   const closeModal = () => setModalOpen(false)
 
-  // Nếu đã đăng nhập mà cố vào landing → redirect về /course
-  if (page === 'home' && api.isLoggedIn()) {
+  const loggedIn = api.isLoggedIn()
+
+  // Đã đăng nhập → không được vào landing hoặc login → redirect /course
+  if (loggedIn && (page === 'home' || page === 'login')) {
     window.history.replaceState({}, '', '/course')
     return <Dashboard onLogout={goLogin} onAdmin={goAdmin} onProfile={goProfile} />
+  }
+
+  // Chưa đăng nhập → không được vào các trang cần auth → redirect /login
+  if (!loggedIn && (page === 'course' || page === 'profile' || page === 'change-password' || page === 'admin')) {
+    window.history.replaceState({}, '', '/login')
+    return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
   }
 
   if (page === 'login')           return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
