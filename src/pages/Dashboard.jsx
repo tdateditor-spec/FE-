@@ -392,7 +392,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
       if (token) {
         const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')
         const payload = JSON.parse(decodeURIComponent(atob(base64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')))
-        setUser({ name: payload.name, email: payload.email })
+        setUser({ name: payload.name, email: payload.email, role: payload.role })
       }
     } catch {}
   }, [])
@@ -613,7 +613,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
                     onMouseLeave={e=>e.currentTarget.style.background='none'}>
                     <User size={13}/> Hồ sơ & Đổi mật khẩu
                   </button>
-                  {onAdmin && (
+                  {onAdmin && user?.role === 'admin' && (
                     <button onClick={()=>{setAvatarOpen(false);onAdmin()}}
                       style={{display:'flex',width:'100%',alignItems:'center',gap:10,padding:'10px 14px',fontSize:12,color:'#a78bfa',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}
                       onMouseEnter={e=>e.currentTarget.style.background='rgba(139,92,246,0.1)'}
