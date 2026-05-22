@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
+import { Profile } from './pages/Profile'
 import { Dashboard } from './pages/Dashboard'
 import { Admin } from './pages/Admin'
 import { Navbar } from './components/Navbar'
@@ -55,6 +56,7 @@ export default function App() {
     if (p === '/course')           return 'course'
     if (p === '/login')            return 'login'
     if (p === '/change-password')  return 'change-password'
+    if (p === '/profile')          return 'profile'
     if (p.startsWith('/admin'))    return 'admin'
     return 'home'
   }
@@ -76,13 +78,15 @@ export default function App() {
   const goLogin        = () => navigate('/login')
   const goAdmin        = () => navigate('/admin')
   const goChangePass   = () => navigate('/change-password')
+  const goProfile      = () => navigate('/profile')
 
   const openModal = () => setModalOpen(true)
   const closeModal = () => setModalOpen(false)
 
   if (page === 'login')           return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
   if (page === 'change-password') return <ChangePassword onSuccess={goDashboard} />
-  if (page === 'course')          return <Dashboard onLogout={goLogin} onAdmin={goAdmin} />
+  if (page === 'profile')         return <Profile onBack={goDashboard} />
+  if (page === 'course')          return <Dashboard onLogout={goLogin} onAdmin={goAdmin} onProfile={goProfile} />
   if (page === 'admin')           return <Admin onBack={goDashboard} onLogout={goLogin} />
 
   return (

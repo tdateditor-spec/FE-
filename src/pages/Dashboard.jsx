@@ -484,14 +484,13 @@ function ProfileModal({ open, onClose, user }) {
 }
 
 /* ─── Dashboard ───────────────────────────────────────────────────────────── */
-export function Dashboard({ onLogout, onAdmin }) {
+export function Dashboard({ onLogout, onAdmin, onProfile }) {
   const defaultLesson       = unlocked.find(l=>!l.done)||unlocked[0]
   const [activeLesson, setActiveLesson] = useState(defaultLesson)
   const [tab, setTab]                   = useState('content')
   const [doneIds, setDoneIds]           = useState(new Set(allLessons.filter(l=>l.done).map(l=>l.id)))
   const [openChapters, setOpenChapters] = useState({ C1:true, C2:true, C3:false })
   const [avatarOpen, setAvatarOpen]     = useState(false)
-  const [profileOpen, setProfileOpen]   = useState(false)
   const [user, setUser]                 = useState(null)
   const avatarRef = useRef(null)
 
@@ -716,7 +715,7 @@ export function Dashboard({ onLogout, onAdmin }) {
                     <p style={{fontSize:13, fontWeight:600, color:'#f1f5f9'}}>{user?.name || 'Học Viên VFS'}</p>
                     <p style={{fontSize:11, color:'#475569', marginTop:2}}>{user?.email || ''}</p>
                   </div>
-                  <button onClick={()=>{setAvatarOpen(false); setProfileOpen(true)}}
+                  <button onClick={()=>{setAvatarOpen(false); if(onProfile) onProfile()}}
                     style={{display:'flex',width:'100%',alignItems:'center',gap:10,padding:'10px 14px',fontSize:12,color:'#94a3b8',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}
                     onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
                     onMouseLeave={e=>e.currentTarget.style.background='none'}>
@@ -840,8 +839,6 @@ export function Dashboard({ onLogout, onAdmin }) {
         </div>
       </div>
 
-      {/* Profile Modal */}
-      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} user={user}/>
     </div>
   )
 }
