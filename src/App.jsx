@@ -82,6 +82,7 @@ export default function App() {
   const goAdmin        = () => navigate('/admin')
   const goChangePass   = () => navigate('/change-password')
   const goProfile      = () => navigate('/profile')
+  const handleLogout   = () => { api.clearToken(); api.clearMustChange(); navigate('/login') }
 
   const openModal = () => setModalOpen(true)
   const closeModal = () => setModalOpen(false)
@@ -103,7 +104,7 @@ export default function App() {
   // Đã đăng nhập → không được vào landing hoặc login → redirect /course
   if (loggedIn && (page === 'home' || page === 'login')) {
     window.history.replaceState({}, '', '/course')
-    return <Dashboard onLogout={goLogin} onAdmin={goAdmin} onProfile={goProfile} />
+    return <Dashboard onLogout={handleLogout} onAdmin={goAdmin} onProfile={goProfile} />
   }
 
   // Chưa đăng nhập → không được vào các trang cần auth → redirect /login
@@ -115,14 +116,14 @@ export default function App() {
   // Học viên cố vào /admin → redirect /course
   if (loggedIn && role !== 'admin' && page === 'admin') {
     window.history.replaceState({}, '', '/course')
-    return <Dashboard onLogout={goLogin} onAdmin={goAdmin} onProfile={goProfile} />
+    return <Dashboard onLogout={handleLogout} onAdmin={goAdmin} onProfile={goProfile} />
   }
 
   if (page === 'login')           return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
   if (page === 'change-password') return <ChangePassword onSuccess={goDashboard} />
   if (page === 'profile')         return <Profile onBack={goDashboard} />
-  if (page === 'course')          return <Dashboard onLogout={goLogin} onAdmin={goAdmin} onProfile={goProfile} />
-  if (page === 'admin')           return <Admin onBack={goDashboard} onLogout={goLogin} />
+  if (page === 'course')          return <Dashboard onLogout={handleLogout} onAdmin={goAdmin} onProfile={goProfile} />
+  if (page === 'admin')           return <Admin onBack={goDashboard} onLogout={handleLogout} />
   if (page === '404')             return <NotFound onBack={goDashboard} />
 
   return (
