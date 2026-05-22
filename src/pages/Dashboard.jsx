@@ -548,7 +548,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
 
         {/* Bottom: admin + logout */}
         <div className="border-t border-white/[0.07] px-3 py-3 space-y-1">
-          {onAdmin && (
+          {onAdmin && user?.role === 'admin' && (
             <button onClick={onAdmin}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[12px] text-violet-400 hover:bg-violet-500/10 transition-colors">
               <ShieldCheck size={13}/> Quản trị Admin
