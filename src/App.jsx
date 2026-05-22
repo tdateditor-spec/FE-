@@ -52,8 +52,8 @@ export default function App() {
   const getPage = () => {
     const p = window.location.pathname
     if (p === '/course') return 'course'
-    if (p === '/login')     return 'login'
-    if (p === '/admin')     return 'admin'
+    if (p === '/login')  return 'login'
+    if (p.startsWith('/admin')) return 'admin'
     return 'home'
   }
   const [page, setPage] = useState(getPage)

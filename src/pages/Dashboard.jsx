@@ -394,7 +394,7 @@ export function Dashboard({ onLogout, onAdmin }) {
       <aside className="flex flex-col w-[300px] flex-shrink-0 border-r border-white/[0.07]" style={{ background:'#141520' }}>
 
         {/* Top: logo + back */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.07]">
+        <div className="flex items-center gap-3 px-4 py-3.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 flex-shrink-0">
             <GraduationCap size={15} className="text-white"/>
           </div>
@@ -405,7 +405,7 @@ export function Dashboard({ onLogout, onAdmin }) {
         </div>
 
         {/* Progress bar */}
-        <div className="px-4 py-3 border-b border-white/[0.07]">
+        <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] text-slate-400">{done} of {total} lessons completed</span>
             <span className="text-[11px] font-semibold text-blue-400">{pct}%</span>

@@ -5,7 +5,7 @@ import { AnimatedTestimonials } from '../ui/AnimatedTestimonials'
 
 const testimonials = [
   {
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=480&fit=crop&crop=face',
+    photo: '/Kien.jpg',
     name: 'Kiên, 23 tuổi',
     tag: 'Freelancer không ổn định → Client dài hạn ổn định',
     result: '~40 triệu/tháng',
@@ -15,7 +15,7 @@ const testimonials = [
     sub: 'Từ client dài hạn ổn định, không còn lo "tháng này có việc không"',
   },
   {
-    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=480&fit=crop&crop=face',
+    photo: '/Binh.jpg',
     name: 'Bình, Sinh viên',
     tag: 'Thu nhập = 0 → 25 triệu trong khi vẫn đi học',
     result: '25 triệu/tháng',
@@ -25,7 +25,7 @@ const testimonials = [
     sub: 'Biết rõ 6 tháng tới mình sẽ ở đâu, làm gì để tăng lên mức tiếp theo',
   },
   {
-    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=480&fit=crop&crop=face',
+    photo: '/Huy.jpg',
     name: 'Huy, Nhân viên văn phòng',
     tag: 'Làm song song buổi tối → Thay thế hoàn toàn lương VP',
     result: '20 triệu/tháng',

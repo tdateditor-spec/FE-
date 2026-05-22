@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 
+const API = import.meta.env.VITE_API_URL || 'https://server-pied-kappa.vercel.app'
+
 export function PaymentModal({ open, onClose }) {
-  const [step, setStep]     = useState('form')   // 'form' | 'qr'
-  const [copied, setCopied] = useState(null)
-  const [form, setForm]     = useState({ name: '', phone: '', email: '' })
-  const [err, setErr]       = useState('')
+  const [step, setStep]       = useState('form')   // 'form' | 'qr'
+  const [copied, setCopied]   = useState(null)
+  const [form, setForm]       = useState({ name: '', phone: '', email: '' })
+  const [err, setErr]         = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -29,13 +32,26 @@ export function PaymentModal({ open, onClose }) {
     setTimeout(() => setCopied(null), 2000)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name.trim()) { setErr('Vui lòng nhập họ tên'); return }
     if (!/^0\d{9}$/.test(form.phone.replace(/\s/g,''))) { setErr('SĐT không hợp lệ (VD: 0901234567)'); return }
     if (!/\S+@\S+\.\S+/.test(form.email)) { setErr('Email không hợp lệ'); return }
     setErr('')
-    setStep('qr')
+    setLoading(true)
+    try {
+      const res  = await fetch(`${API}/api/register`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name: form.name.trim(), phone: form.phone.replace(/\s/g,''), email: form.email.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErr(data.error || 'Có lỗi xảy ra, vui lòng thử lại'); setLoading(false); return }
+      setStep('qr')
+    } catch {
+      setErr('Không thể kết nối server, vui lòng thử lại')
+    }
+    setLoading(false)
   }
 
   const phone    = form.phone.replace(/\s/g,'')
@@ -102,9 +118,10 @@ export function PaymentModal({ open, onClose }) {
 
               <button
                 type="submit"
-                className="w-full rounded-2xl bg-gradient-to-r from-blue-700 via-blue-500 to-blue-700 py-4 font-heading font-bold text-white shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_40px_rgba(59,130,246,0.6)] hover:-translate-y-0.5 transition-all"
+                disabled={loading}
+                className="w-full rounded-2xl bg-gradient-to-r from-blue-700 via-blue-500 to-blue-700 py-4 font-heading font-bold text-white shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_40px_rgba(59,130,246,0.6)] hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                → Tiếp Tục Thanh Toán
+                {loading ? '⏳ Đang xử lý...' : '→ Tiếp Tục Thanh Toán'}
               </button>
             </form>
 
@@ -168,11 +185,11 @@ export function PaymentModal({ open, onClose }) {
               ))}
             </div>
 
-            <div className="rounded-2xl border border-blue-700/20 bg-blue-900/20 p-4 text-center">
-              <p className="text-xs font-semibold text-blue-300 mb-1">Sau khi chuyển khoản:</p>
+            <div className="rounded-2xl border border-emerald-700/20 bg-emerald-900/20 p-4 text-center">
+              <p className="text-xs font-semibold text-emerald-300 mb-1">✅ Sau khi chuyển khoản thành công:</p>
               <p className="text-xs text-slate-400">
-                Nhắn ảnh xác nhận về <strong className="text-blue-400">Telegram @viralfreedom</strong><br />
-                Nhận link truy cập trong <strong className="text-white">24 giờ</strong> 🚀
+                Hệ thống tự động gửi <strong className="text-white">tài khoản & mật khẩu</strong><br />
+                về email <strong className="text-emerald-400">{form.email}</strong> trong vài phút 🚀
               </p>
             </div>
 

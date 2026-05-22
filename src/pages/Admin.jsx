@@ -232,41 +232,67 @@ function Overview({ users, chapters }) {
 }
 
 /* ─── User Management ────────────────────────────────────────────────────── */
-function UserManagement({ users, setUsers }) {
-  const [search, setSearch]  = useState('')
-  const [modal, setModal]    = useState(null)   // null | 'add' | user-obj
-  const [confirmDel, setDel] = useState(null)
-  const [form, setForm]      = useState({ name:'', email:'', phone:'', status:'active', paid:false })
+function UserManagement() {
+  const PAGE_SIZE = 10
 
-  const filtered = users.filter(u =>
-    u.name.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
-  )
+  const [data, setData]        = useState([])
+  const [pagination, setPag]   = useState({ page:1, totalPages:1, total:0, hasNext:false, hasPrev:false })
+  const [loading, setLoading]  = useState(true)
+  const [search, setSearch]    = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [modal, setModal]      = useState(null)
+  const [confirmDel, setDel]   = useState(null)
+  const [saving, setSaving]    = useState(false)
+  const [form, setForm]        = useState({ name:'', email:'', phone:'', status:'active', paid:false })
+
+  const load = async (page = 1, q = search, st = statusFilter) => {
+    setLoading(true)
+    try {
+      const res = await api.getUsers({ page, limit: PAGE_SIZE, search: q, status: st })
+      setData(res.data || [])
+      setPag(res.pagination || { page:1, totalPages:1, total:0 })
+    } catch {}
+    setLoading(false)
+  }
+
+  useEffect(() => { load(1) }, [])
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput); load(1, searchInput, statusFilter) }, 400)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  const onStatusFilter = v => { setStatusFilter(v); load(1, search, v) }
+  const goPage = p => load(p, search, statusFilter)
 
   const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setModal('add') }
-  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone, status:u.status, paid:u.paid }); setModal(u) }
+  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid }); setModal(u) }
+
   const save = async () => {
     if (!form.name || !form.email) return
+    setSaving(true)
     try {
       if (modal === 'add') {
-        const newUser = await api.addUser(form)
-        setUsers(p => [...p, newUser])
+        await api.addUser(form)
       } else {
-        const updated = await api.updateUser(modal.id, form)
-        setUsers(p => p.map(u => u.id===modal.id ? updated : u))
+        await api.updateUser(modal.id, form)
       }
-    } catch {}
-    setModal(null)
+      setModal(null)
+      load(pagination.page)
+    } catch {} finally { setSaving(false) }
   }
+
   const del = async id => {
     try { await api.deleteUser(id) } catch {}
-    setUsers(p => p.filter(u=>u.id!==id)); setDel(null)
+    setDel(null); load(pagination.page)
   }
-  const toggleLock = async id => {
-    const u = users.find(x=>x.id===id)
-    const newStatus = u.status==='inactive' ? 'active' : 'inactive'
-    try { await api.updateUser(id, { status: newStatus }) } catch {}
-    setUsers(p => p.map(u => u.id===id ? { ...u, status: newStatus } : u))
+
+  const toggleLock = async u => {
+    const newStatus = u.status === 'inactive' ? 'active' : 'inactive'
+    try { await api.updateUser(u.id, { status: newStatus }) } catch {}
+    load(pagination.page)
   }
 
   const statusMap = {
@@ -277,10 +303,13 @@ function UserManagement({ users, setUsers }) {
 
   return (
     <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">Học viên</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">Quản lý toàn bộ học viên</p>
+          <p className="text-[13px] text-slate-500 mt-0.5">
+            {pagination.total > 0 ? `${pagination.total} học viên` : 'Quản lý học viên'}
+          </p>
         </div>
         <button onClick={openAdd}
           className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-[13px] font-semibold text-white transition-all">
@@ -289,80 +318,131 @@ function UserManagement({ users, setUsers }) {
       </div>
 
       <DarkCard className="!p-0 overflow-hidden">
-        {/* Search */}
-        <div className="px-4 py-3" style={{ borderBottom:`1px solid ${T.border}` }}>
-          <div className="relative">
+        {/* Toolbar */}
+        <div className="flex items-center gap-3 px-4 py-3 flex-wrap" style={{ borderBottom:`1px solid ${T.border}` }}>
+          <div className="relative flex-1 min-w-[180px]">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"/>
-            <DarkInput value={search} onChange={e=>setSearch(e.target.value)}
-              placeholder="Tìm theo tên hoặc email..." className="pl-8"/>
+            <DarkInput value={searchInput} onChange={e=>setSearchInput(e.target.value)}
+              placeholder="Tìm tên, email, SĐT..." className="pl-8"/>
           </div>
+          <select value={statusFilter} onChange={e=>onStatusFilter(e.target.value)}
+            className="rounded-xl border bg-white/[0.04] px-3 py-2 text-[13px] text-slate-300 outline-none transition-all"
+            style={{ borderColor: T.border, background:'#1a1d2e' }}>
+            <option value="">Tất cả</option>
+            <option value="active">Đang học</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="inactive">Dừng học</option>
+          </select>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr style={{ borderBottom:`1px solid ${T.border}` }}>
-                {['Học viên','SĐT','Trạng thái','Tiến độ','Thanh toán','Ngày tham gia',''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-600">Không tìm thấy học viên nào</td></tr>
-              )}
-              {filtered.map((u, i) => {
-                const st = statusMap[u.status] || statusMap.inactive
-                return (
-                  <tr key={u.id} className="transition-colors hover:bg-white/[0.02]"
-                    style={{ borderBottom: i < filtered.length-1 ? `1px solid ${T.border}` : 'none' }}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-7 w-7 flex-shrink-0 rounded-xl bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white">
-                          {u.name.split(' ').map(w=>w[0]).slice(-2).join('').toUpperCase()}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-5 w-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"/>
+            </div>
+          ) : (
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr style={{ borderBottom:`1px solid ${T.border}` }}>
+                  {['Học viên','SĐT','Trạng thái','Tiến độ','Thanh toán','Ngày TG',''].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.length === 0 && (
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-600">Không tìm thấy học viên nào</td></tr>
+                )}
+                {data.map((u, i) => {
+                  const st = statusMap[u.status] || statusMap.inactive
+                  return (
+                    <tr key={u.id} className="transition-colors hover:bg-white/[0.02]"
+                      style={{ borderBottom: i < data.length-1 ? `1px solid ${T.border}` : 'none' }}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-7 w-7 flex-shrink-0 rounded-xl bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white">
+                            {u.name.split(' ').map(w=>w[0]).slice(-2).join('').toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-slate-200 font-medium">{u.name}</p>
+                            <p className="text-[11px] text-slate-600">{u.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-slate-200 font-medium">{u.name}</p>
-                          <p className="text-[11px] text-slate-600">{u.email}</p>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">{u.phone || '—'}</td>
+                      <td className="px-4 py-3"><DarkBadge color={st.color}>{st.label}</DarkBadge></td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 min-w-[90px]">
+                          <div className="flex-1 h-1.5 rounded-xl overflow-hidden" style={{ background:'rgba(255,255,255,0.06)' }}>
+                            <div className="h-full rounded-xl bg-blue-500" style={{ width:`${u.progress||0}%` }}/>
+                          </div>
+                          <span className="text-[11px] text-slate-600 w-8 text-right">{u.progress||0}%</span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">{u.phone}</td>
-                    <td className="px-4 py-3"><DarkBadge color={st.color}>{st.label}</DarkBadge></td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 min-w-[90px]">
-                        <div className="flex-1 h-1.5 rounded-xl overflow-hidden" style={{ background:'rgba(255,255,255,0.06)' }}>
-                          <div className="h-full rounded-xl bg-blue-500" style={{ width:`${u.progress}%` }}/>
+                      </td>
+                      <td className="px-4 py-3">
+                        <DarkBadge color={u.paid ? 'green' : 'yellow'}>{u.paid ? 'Đã trả' : 'Chưa trả'}</DarkBadge>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 text-[12px]">{u.join_date || '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={()=>openEdit(u)}
+                            className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
+                            <Edit2 size={13}/>
+                          </button>
+                          <button onClick={()=>toggleLock(u)}
+                            className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
+                            {u.status==='inactive' ? <Unlock size={13}/> : <Lock size={13}/>}
+                          </button>
+                          <button onClick={()=>setDel(u)}
+                            className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                            <Trash2 size={13}/>
+                          </button>
                         </div>
-                        <span className="text-[11px] text-slate-600 w-8 text-right">{u.progress}%</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <DarkBadge color={u.paid ? 'green' : 'yellow'}>{u.paid ? 'Đã trả' : 'Chưa trả'}</DarkBadge>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{u.joinDate}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={()=>openEdit(u)}
-                          className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
-                          <Edit2 size={13}/>
-                        </button>
-                        <button onClick={()=>toggleLock(u.id)}
-                          className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
-                          {u.status==='inactive' ? <Unlock size={13}/> : <Lock size={13}/>}
-                        </button>
-                        <button onClick={()=>setDel(u)}
-                          className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
-                          <Trash2 size={13}/>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Pagination — luôn hiển thị */}
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderTop:`1px solid ${T.border}` }}>
+          <p className="text-[12px] text-slate-500">
+            Hiển thị <span className="text-white font-medium">{data.length}</span> / <span className="text-white font-medium">{pagination.total || data.length}</span> học viên
+          </p>
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button onClick={()=>goPage(pagination.page-1)} disabled={!pagination.hasPrev}
+                className="h-7 px-3 rounded-xl text-[12px] border transition-all disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                style={{ borderColor: T.border }}>
+                ← Trước
+              </button>
+              {Array.from({ length: pagination.totalPages }, (_,i) => i+1)
+                .filter(p => p === 1 || p === pagination.totalPages || Math.abs(p - pagination.page) <= 1)
+                .reduce((acc, p, idx, arr) => {
+                  if (idx > 0 && p - arr[idx-1] > 1) acc.push('...')
+                  acc.push(p); return acc
+                }, [])
+                .map((p, i) => p === '...'
+                  ? <span key={`e${i}`} className="text-[12px] text-slate-600 px-1">…</span>
+                  : <button key={p} onClick={()=>goPage(p)}
+                      className={`h-7 w-7 rounded-xl text-[12px] font-medium transition-all ${
+                        p === pagination.page
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                      }`}>{p}</button>
                 )
-              })}
-            </tbody>
-          </table>
+              }
+              <button onClick={()=>goPage(pagination.page+1)} disabled={!pagination.hasNext}
+                className="h-7 px-3 rounded-xl text-[12px] border transition-all disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                style={{ borderColor: T.border }}>
+                Tiếp →
+              </button>
+            </div>
+          )}
         </div>
       </DarkCard>
 
@@ -398,7 +478,8 @@ function UserManagement({ users, setUsers }) {
                 <span className="text-[13px] text-slate-300">Đã thanh toán</span>
               </label>
             </div>
-            <ModalFooter onCancel={()=>setModal(null)} onConfirm={save} confirmLabel={modal==='add'?'Thêm học viên':'Lưu thay đổi'}/>
+            <ModalFooter onCancel={()=>setModal(null)} onConfirm={save}
+              confirmLabel={saving ? 'Đang lưu...' : modal==='add' ? 'Thêm học viên' : 'Lưu thay đổi'}/>
           </Modal>
         )}
       </AnimatePresence>
@@ -659,28 +740,64 @@ function ModuleManagement({ chapters, setChapters }) {
   )
 }
 
+/* ─── Route map ─────────────────────────────────────────────────────────── */
+const ROUTES = {
+  '/admin':         'overview',
+  '/admin/users':   'users',
+  '/admin/content': 'modules',
+}
+const ROUTE_BY_ID = {
+  overview: '/admin',
+  users:    '/admin/users',
+  modules:  '/admin/content',
+}
+
+function getAdminPage() {
+  return ROUTES[window.location.pathname] || 'overview'
+}
+
 /* ─── Admin Shell ────────────────────────────────────────────────────────── */
 export function Admin({ onBack, onLogout }) {
-  const [page, setPage]         = useState('overview')
+  const [page, setPage]         = useState(getAdminPage)
   const [users, setUsers]       = useState([])
   const [chapters, setChapters] = useState([])
   const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(null)
   const [avatarOpen, setAvatarOpen] = useState(false)
 
+  // Sync với browser back/forward
   useEffect(() => {
-    Promise.all([api.getUsers(), api.getCourses()])
-      .then(([usersData, coursesData]) => {
-        setUsers(usersData)
-        setChapters(coursesData.chapters)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    const handler = () => setPage(getAdminPage())
+    window.addEventListener('popstate', handler)
+    return () => window.removeEventListener('popstate', handler)
   }, [])
 
+  const navigate = (id) => {
+    const path = ROUTE_BY_ID[id] || '/admin'
+    window.history.pushState({}, '', path)
+    setPage(id)
+  }
+
+  const fetchData = () => {
+    setLoading(true)
+    setError(null)
+    const token = localStorage.getItem('vfs_token')
+    if (!token) { onLogout && onLogout(); return }
+    Promise.all([api.getUsers({ page:1, limit:10 }), api.getCourses()])
+      .then(([usersRes, coursesData]) => {
+        setUsers(usersRes.data || [])
+        setChapters(coursesData.chapters || [])
+      })
+      .catch(err => setError(err.message || 'Không thể kết nối server'))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchData() }, [])
+
   const navItems = [
-    { id:'overview', label:'Dashboard',   icon:LayoutDashboard, group:'GENERAL'    },
-    { id:'users',    label:'Học viên',    icon:Users,           group:'MANAGEMENT' },
-    { id:'modules',  label:'Nội dung',    icon:BookOpen,        group:'MANAGEMENT' },
+    { id:'overview', label:'Dashboard',   icon:LayoutDashboard, group:'GENERAL',    path:'/admin'         },
+    { id:'users',    label:'Học viên',    icon:Users,           group:'MANAGEMENT', path:'/admin/users'   },
+    { id:'modules',  label:'Nội dung',    icon:BookOpen,        group:'MANAGEMENT', path:'/admin/content' },
   ]
 
   const groups = ['GENERAL','MANAGEMENT']
@@ -692,7 +809,7 @@ export function Admin({ onBack, onLogout }) {
       <aside className="flex flex-col w-[240px] flex-shrink-0" style={{ background: T.sidebar, borderRight:`1px solid ${T.border}` }}>
 
         {/* Logo */}
-        <div className="flex items-center gap-2.5 px-4 py-3.5" style={{ borderBottom:`1px solid ${T.border}` }}>
+        <div className="flex items-center gap-2.5 px-4 py-3.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-600 flex-shrink-0">
             <ShieldCheck size={15} className="text-white"/>
           </div>
@@ -707,10 +824,10 @@ export function Admin({ onBack, onLogout }) {
           {groups.map(group => (
             <div key={group}>
               <p className="px-2 mb-1 text-[10px] font-semibold tracking-widest text-slate-600">{group}</p>
-              {navItems.filter(i=>i.group===group).map(({ id, label, icon:Icon }) => {
+              {navItems.filter(i=>i.group===group).map(({ id, label, icon:Icon, path }) => {
                 const active = page === id
                 return (
-                  <button key={id} onClick={()=>setPage(id)}
+                  <button key={id} onClick={()=>navigate(id)}
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all mb-0.5"
                     style={{
                       background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
@@ -718,6 +835,7 @@ export function Admin({ onBack, onLogout }) {
                     }}
                     onMouseEnter={e=>{ if(!active){ e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#cbd5e1' }}}
                     onMouseLeave={e=>{ if(!active){ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#64748b' }}}
+                    title={path}
                   >
                     <Icon size={15}/>{label}
                   </button>
@@ -808,8 +926,20 @@ export function Admin({ onBack, onLogout }) {
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
-            <div className="flex items-center justify-center h-40">
+            <div className="flex flex-col items-center justify-center h-40 gap-3">
+              <div className="h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"/>
               <p className="text-[13px] text-slate-600">Đang tải dữ liệu...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-4">
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-6 py-4 text-center max-w-sm">
+                <p className="text-[13px] text-red-400 font-medium mb-1">Không thể tải dữ liệu</p>
+                <p className="text-[12px] text-red-400/60">{error}</p>
+              </div>
+              <button onClick={fetchData}
+                className="rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-[13px] font-semibold text-white transition-all">
+                Thử lại
+              </button>
             </div>
           ) : (
             <>

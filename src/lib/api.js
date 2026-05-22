@@ -34,8 +34,13 @@ export const api = {
   updateLesson:  (cid, lid, data) => request('PUT', `/api/courses/chapters/${cid}/lessons/${lid}`, data),
   deleteLesson:  (cid, lid) => request('DELETE', `/api/courses/chapters/${cid}/lessons/${lid}`),
 
-  // Users
-  getUsers:    () => request('GET', '/api/users'),
+  // Users (phân trang)
+  getUsers: ({ page = 1, limit = 10, search = '', status = '' } = {}) => {
+    const params = new URLSearchParams({ page, limit })
+    if (search) params.set('search', search)
+    if (status) params.set('status', status)
+    return request('GET', `/api/users?${params}`)
+  },
   addUser:     (data) => request('POST', '/api/users', data),
   updateUser:  (id, data) => request('PUT', `/api/users/${id}`, data),
   deleteUser:  (id) => request('DELETE', `/api/users/${id}`),
