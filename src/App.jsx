@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from './lib/api'
 import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
 import { Profile } from './pages/Profile'
