@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Login } from './pages/Login'
+import { ChangePassword } from './pages/ChangePassword'
 import { Dashboard } from './pages/Dashboard'
 import { Admin } from './pages/Admin'
 import { Navbar } from './components/Navbar'
@@ -51,9 +52,10 @@ export default function App() {
 
   const getPage = () => {
     const p = window.location.pathname
-    if (p === '/course') return 'course'
-    if (p === '/login')  return 'login'
-    if (p.startsWith('/admin')) return 'admin'
+    if (p === '/course')           return 'course'
+    if (p === '/login')            return 'login'
+    if (p === '/change-password')  return 'change-password'
+    if (p.startsWith('/admin'))    return 'admin'
     return 'home'
   }
   const [page, setPage] = useState(getPage)
@@ -69,17 +71,19 @@ export default function App() {
     setPage(getPage())
   }
 
-  const goHome      = () => navigate('/')
-  const goDashboard = () => navigate('/course')
-  const goLogin     = () => navigate('/login')
-  const goAdmin     = () => navigate('/admin')
+  const goHome         = () => navigate('/')
+  const goDashboard    = () => navigate('/course')
+  const goLogin        = () => navigate('/login')
+  const goAdmin        = () => navigate('/admin')
+  const goChangePass   = () => navigate('/change-password')
 
   const openModal = () => setModalOpen(true)
   const closeModal = () => setModalOpen(false)
 
-  if (page === 'login')     return <Login onBack={goHome} onSuccess={goDashboard} />
-  if (page === 'course') return <Dashboard onLogout={goLogin} onAdmin={goAdmin} />
-  if (page === 'admin')     return <Admin onBack={goDashboard} onLogout={goLogin} />
+  if (page === 'login')           return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
+  if (page === 'change-password') return <ChangePassword onSuccess={goDashboard} />
+  if (page === 'course')          return <Dashboard onLogout={goLogin} onAdmin={goAdmin} />
+  if (page === 'admin')           return <Admin onBack={goDashboard} onLogout={goLogin} />
 
   return (
     <div className="bg-mesh min-h-screen">

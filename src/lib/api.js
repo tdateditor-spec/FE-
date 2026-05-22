@@ -23,7 +23,7 @@ async function request(method, path, body) {
 export const api = {
   // Auth
   login:          (email, password) => request('POST', '/api/auth/login', { email, password }),
-  changePassword: (oldPassword, newPassword) => request('POST', '/api/auth/change-password', { oldPassword, newPassword }),
+  changePassword: (newPassword) => request('POST', '/api/auth/change-password', { newPassword }),
 
   // Courses
   getCourses:    () => request('GET', '/api/courses'),
@@ -46,7 +46,12 @@ export const api = {
   deleteUser:  (id) => request('DELETE', `/api/users/${id}`),
 
   // Token helpers
-  saveToken: (token) => localStorage.setItem('vfs_token', token),
+  saveToken: (token, mustChangePassword = false) => {
+    localStorage.setItem('vfs_token', token)
+    localStorage.setItem('vfs_must_change', mustChangePassword ? '1' : '0')
+  },
+  mustChangePassword: () => localStorage.getItem('vfs_must_change') === '1',
+  clearMustChange: () => localStorage.removeItem('vfs_must_change'),
   clearToken: () => localStorage.removeItem('vfs_token'),
   isLoggedIn: () => !!getToken(),
 }

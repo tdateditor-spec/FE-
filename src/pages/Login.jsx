@@ -110,7 +110,7 @@ function Input({ label, id, type = 'text', placeholder, value, onChange }) {
 }
 
 /* ─── Login page ─────────────────────────────────────────────────────────── */
-export function Login({ onBack, onSuccess }) {
+export function Login({ onBack, onSuccess, onMustChange }) {
   const [step, setStep]         = useState('email')   // 'email' | 'password'
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -131,9 +131,13 @@ export function Login({ onBack, onSuccess }) {
     if (!password) { setError('Vui lòng nhập mật khẩu.'); return }
     setLoading(true)
     try {
-      const { token } = await api.login(email, password)
-      api.saveToken(token)
-      if (onSuccess) onSuccess()
+      const data = await api.login(email, password)
+      api.saveToken(data.token, data.mustChangePassword)
+      if (data.mustChangePassword) {
+        if (onMustChange) onMustChange()
+      } else {
+        if (onSuccess) onSuccess()
+      }
     } catch (err) {
       setError(err.message || 'Đăng nhập thất bại')
     } finally {
