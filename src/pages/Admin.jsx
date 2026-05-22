@@ -244,6 +244,7 @@ function UserManagement() {
   const [modal, setModal]      = useState(null)
   const [confirmDel, setDel]   = useState(null)
   const [saving, setSaving]    = useState(false)
+  const [actionId, setActionId] = useState(null) // id đang xử lý (edit/delete/lock)
   const [form, setForm]        = useState({ name:'', email:'', phone:'', status:'active', paid:false })
 
   const load = async (page = 1, q = search, st = statusFilter) => {
@@ -285,14 +286,16 @@ function UserManagement() {
   }
 
   const del = async id => {
+    setActionId(id)
     try { await api.deleteUser(id) } catch {}
-    setDel(null); load(pagination.page)
+    setDel(null); setActionId(null); load(pagination.page)
   }
 
   const toggleLock = async u => {
+    setActionId(u.id)
     const newStatus = u.status === 'inactive' ? 'active' : 'inactive'
     try { await api.updateUser(u.id, { status: newStatus }) } catch {}
-    load(pagination.page)
+    setActionId(null); load(pagination.page)
   }
 
   const statusMap = {
@@ -386,18 +389,27 @@ function UserManagement() {
                       <td className="px-4 py-3 text-slate-600 text-[12px]">{u.join_date || '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={()=>openEdit(u)}
-                            className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
-                            <Edit2 size={13}/>
-                          </button>
-                          <button onClick={()=>toggleLock(u)}
-                            className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
-                            {u.status==='inactive' ? <Unlock size={13}/> : <Lock size={13}/>}
-                          </button>
-                          <button onClick={()=>setDel(u)}
-                            className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
-                            <Trash2 size={13}/>
-                          </button>
+                          {actionId === u.id ? (
+                            <svg className="animate-spin h-4 w-4 text-blue-400 mx-1.5" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                            </svg>
+                          ) : (
+                            <>
+                              <button onClick={()=>openEdit(u)}
+                                className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
+                                <Edit2 size={13}/>
+                              </button>
+                              <button onClick={()=>toggleLock(u)}
+                                className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
+                                {u.status==='inactive' ? <Unlock size={13}/> : <Lock size={13}/>}
+                              </button>
+                              <button onClick={()=>setDel(u)}
+                                className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                                <Trash2 size={13}/>
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -506,6 +518,7 @@ function ModuleManagement({ chapters, setChapters }) {
   const [lModal, setLModal]   = useState(null)
   const [delCh, setDelCh]     = useState(null)
   const [delL, setDelL]       = useState(null)
+  const [actionId, setActionId] = useState(null)
   const [chForm, setChForm]   = useState({ title:'', description:'' })
   const [lForm, setLForm]     = useState({ title:'', duration:'', free:false, videoUrl:'' })
 
@@ -525,8 +538,9 @@ function ModuleManagement({ chapters, setChapters }) {
     setChModal(null)
   }
   const doDelCh = async id => {
+    setActionId(`ch-${id}`)
     try { await api.deleteChapter(id) } catch {}
-    setChapters(p=>p.filter(c=>c.id!==id)); setDelCh(null)
+    setChapters(p=>p.filter(c=>c.id!==id)); setDelCh(null); setActionId(null)
   }
   const saveL = async () => {
     if (!lForm.title) return
@@ -543,8 +557,9 @@ function ModuleManagement({ chapters, setChapters }) {
     setLModal(null)
   }
   const doDelL = async ({ch, l}) => {
+    setActionId(`l-${l.id}`)
     try { await api.deleteLesson(ch.id, l.id) } catch {}
-    setChapters(p=>p.map(c=>c.id===ch.id?{...c,lessons:c.lessons.filter(x=>x.id!==l.id)}:c)); setDelL(null)
+    setChapters(p=>p.map(c=>c.id===ch.id?{...c,lessons:c.lessons.filter(x=>x.id!==l.id)}:c)); setDelL(null); setActionId(null)
   }
 
   const chColors = ['bg-violet-500','bg-blue-500','bg-emerald-500']
@@ -583,14 +598,23 @@ function ModuleManagement({ chapters, setChapters }) {
                   className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-[12px] text-slate-400 hover:text-white transition-all">
                   <Plus size={11}/> Thêm bài
                 </button>
-                <button onClick={()=>{setChForm({title:ch.title,description:ch.description||''});setChModal(ch)}}
-                  className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
-                  <Edit2 size={12}/>
-                </button>
-                <button onClick={()=>setDelCh(ch)}
-                  className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
-                  <Trash2 size={12}/>
-                </button>
+                {actionId === `ch-${ch.id}` ? (
+                  <svg className="animate-spin h-4 w-4 text-blue-400 mx-1" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                ) : (
+                  <>
+                    <button onClick={()=>{setChForm({title:ch.title,description:ch.description||''});setChModal(ch)}}
+                      className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
+                      <Edit2 size={12}/>
+                    </button>
+                    <button onClick={()=>setDelCh(ch)}
+                      className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                      <Trash2 size={12}/>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -639,14 +663,23 @@ function ModuleManagement({ chapters, setChapters }) {
                               </td>
                               <td className="px-4 py-2.5">
                                 <div className="flex items-center justify-end gap-1">
-                                  <button onClick={()=>{setLForm({title:l.title,duration:l.duration,free:l.free,videoUrl:l.videoUrl||''});setLModal({mode:'edit',ch,l})}}
-                                    className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
-                                    <Edit2 size={11}/>
-                                  </button>
-                                  <button onClick={()=>setDelL({ch,l})}
-                                    className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
-                                    <Trash2 size={11}/>
-                                  </button>
+                                  {actionId === `l-${l.id}` ? (
+                                    <svg className="animate-spin h-3.5 w-3.5 text-blue-400 mx-1" viewBox="0 0 24 24" fill="none">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                    </svg>
+                                  ) : (
+                                    <>
+                                      <button onClick={()=>{setLForm({title:l.title,duration:l.duration,free:l.free,videoUrl:l.videoUrl||''});setLModal({mode:'edit',ch,l})}}
+                                        className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
+                                        <Edit2 size={11}/>
+                                      </button>
+                                      <button onClick={()=>setDelL({ch,l})}
+                                        className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                                        <Trash2 size={11}/>
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>
