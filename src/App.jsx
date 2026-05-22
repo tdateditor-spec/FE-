@@ -82,7 +82,7 @@ export default function App() {
   const goAdmin        = () => navigate('/admin')
   const goChangePass   = () => navigate('/change-password')
   const goProfile      = () => navigate('/profile')
-  const handleLogout   = () => { api.clearToken(); api.clearMustChange(); navigate('/login') }
+  const handleLogout   = () => { api.clearToken(); api.clearMustChange(); window.location.href = '/login' }
 
   const openModal = () => setModalOpen(true)
   const closeModal = () => setModalOpen(false)
