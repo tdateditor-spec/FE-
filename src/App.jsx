@@ -88,6 +88,18 @@ export default function App() {
 
   const loggedIn = api.isLoggedIn()
 
+  // Lấy role từ token
+  const getRole = () => {
+    try {
+      const token = localStorage.getItem('vfs_token')
+      if (!token) return null
+      const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')
+      const payload = JSON.parse(decodeURIComponent(atob(base64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')))
+      return payload.role
+    } catch { return null }
+  }
+  const role = loggedIn ? getRole() : null
+
   // Đã đăng nhập → không được vào landing hoặc login → redirect /course
   if (loggedIn && (page === 'home' || page === 'login')) {
     window.history.replaceState({}, '', '/course')
@@ -98,6 +110,12 @@ export default function App() {
   if (!loggedIn && (page === 'course' || page === 'profile' || page === 'change-password' || page === 'admin')) {
     window.history.replaceState({}, '', '/login')
     return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
+  }
+
+  // Học viên cố vào /admin → redirect /course
+  if (loggedIn && role !== 'admin' && page === 'admin') {
+    window.history.replaceState({}, '', '/course')
+    return <Dashboard onLogout={goLogin} onAdmin={goAdmin} onProfile={goProfile} />
   }
 
   if (page === 'login')           return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
