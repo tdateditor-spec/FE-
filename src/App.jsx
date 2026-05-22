@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
 import { Profile } from './pages/Profile'
+import { NotFound } from './pages/NotFound'
 import { Dashboard } from './pages/Dashboard'
 import { Admin } from './pages/Admin'
 import { Navbar } from './components/Navbar'
@@ -58,7 +59,8 @@ export default function App() {
     if (p === '/change-password')  return 'change-password'
     if (p === '/profile')          return 'profile'
     if (p.startsWith('/admin'))    return 'admin'
-    return 'home'
+    if (p === '/' || p === '')     return 'home'
+    return '404'
   }
   const [page, setPage] = useState(getPage)
 
@@ -83,11 +85,18 @@ export default function App() {
   const openModal = () => setModalOpen(true)
   const closeModal = () => setModalOpen(false)
 
+  // Nếu đã đăng nhập mà cố vào landing → redirect về /course
+  if (page === 'home' && api.isLoggedIn()) {
+    window.history.replaceState({}, '', '/course')
+    return <Dashboard onLogout={goLogin} onAdmin={goAdmin} onProfile={goProfile} />
+  }
+
   if (page === 'login')           return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
   if (page === 'change-password') return <ChangePassword onSuccess={goDashboard} />
   if (page === 'profile')         return <Profile onBack={goDashboard} />
   if (page === 'course')          return <Dashboard onLogout={goLogin} onAdmin={goAdmin} onProfile={goProfile} />
   if (page === 'admin')           return <Admin onBack={goDashboard} onLogout={goLogin} />
+  if (page === '404')             return <NotFound onBack={goDashboard} />
 
   return (
     <div className="bg-mesh min-h-screen">
