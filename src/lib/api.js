@@ -23,7 +23,9 @@ async function request(method, path, body) {
 export const api = {
   // Auth
   login:          (email, password) => request('POST', '/api/auth/login', { email, password }),
-  changePassword: (newPassword) => request('POST', '/api/auth/change-password', { newPassword }),
+  changePassword: (newPassword, oldPassword) => request('POST', '/api/auth/change-password', { newPassword, oldPassword }),
+  forgotPassword: (email)                    => request('POST', '/api/auth/forgot-password', { email }),
+  resetPassword:  (token, newPassword)       => request('POST', '/api/auth/reset-password', { token, newPassword }),
 
   // Courses
   getCourses:    () => request('GET', '/api/courses'),

@@ -110,7 +110,7 @@ function Input({ label, id, type = 'text', placeholder, value, onChange }) {
 }
 
 /* ─── Login page ─────────────────────────────────────────────────────────── */
-export function Login({ onBack, onSuccess, onMustChange }) {
+export function Login({ onBack, onSuccess, onMustChange, onForgotPassword }) {
   const [step, setStep]         = useState('email')   // 'email' | 'password'
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -254,7 +254,7 @@ export function Login({ onBack, onSuccess, onMustChange }) {
                     >
                       ← Đổi email
                     </button>
-                    <button type="button" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                    <button type="button" onClick={onForgotPassword} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
                       Quên mật khẩu?
                     </button>
                   </div>

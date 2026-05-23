@@ -4,6 +4,8 @@ import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
 import { Profile } from './pages/Profile'
 import { NotFound } from './pages/NotFound'
+import { ForgotPassword } from './pages/ForgotPassword'
+import { ResetPassword } from './pages/ResetPassword'
 import { Dashboard } from './pages/Dashboard'
 import { Admin } from './pages/Admin'
 import { Navbar } from './components/Navbar'
@@ -55,12 +57,14 @@ export default function App() {
 
   const getPage = () => {
     const p = window.location.pathname
-    if (p === '/course')           return 'course'
-    if (p === '/login')            return 'login'
-    if (p === '/change-password')  return 'change-password'
-    if (p === '/profile')          return 'profile'
-    if (p.startsWith('/admin'))    return 'admin'
-    if (p === '/' || p === '')     return 'home'
+    if (p === '/course')            return 'course'
+    if (p === '/login')             return 'login'
+    if (p === '/change-password')   return 'change-password'
+    if (p === '/profile')           return 'profile'
+    if (p.startsWith('/admin'))     return 'admin'
+    if (p === '/forgot-password')   return 'forgot-password'
+    if (p === '/reset-password')    return 'reset-password'
+    if (p === '/' || p === '')      return 'home'
     return '404'
   }
   const [page, setPage] = useState(getPage)
@@ -82,6 +86,7 @@ export default function App() {
   const goAdmin        = () => navigate('/admin')
   const goChangePass   = () => navigate('/change-password')
   const goProfile      = () => navigate('/profile')
+  const goForgotPass   = () => navigate('/forgot-password')
   const handleLogout   = () => { api.clearToken(); api.clearMustChange(); window.location.href = '/login' }
 
   const openModal = () => setModalOpen(true)
@@ -108,7 +113,7 @@ export default function App() {
   }
 
   // Chưa đăng nhập → không được vào các trang cần auth → redirect /login
-  if (!loggedIn && (page === 'course' || page === 'profile' || page === 'change-password' || page === 'admin')) {
+  if (!loggedIn && (page === 'course' || page === 'profile' || page === 'change-password' || page === 'admin') && page !== 'forgot-password' && page !== 'reset-password') {
     window.history.replaceState({}, '', '/login')
     return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
   }
@@ -119,12 +124,14 @@ export default function App() {
     return <Dashboard onLogout={handleLogout} onAdmin={goAdmin} onProfile={goProfile} />
   }
 
-  if (page === 'login')           return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} />
-  if (page === 'change-password') return <ChangePassword onSuccess={goDashboard} />
-  if (page === 'profile')         return <Profile onBack={goDashboard} />
-  if (page === 'course')          return <Dashboard onLogout={handleLogout} onAdmin={goAdmin} onProfile={goProfile} />
-  if (page === 'admin')           return <Admin onBack={goDashboard} onLogout={handleLogout} />
-  if (page === '404')             return <NotFound onBack={goDashboard} />
+  if (page === 'login')            return <Login onBack={goHome} onSuccess={goDashboard} onMustChange={goChangePass} onForgotPassword={goForgotPass} />
+  if (page === 'change-password')  return <ChangePassword onSuccess={goDashboard} />
+  if (page === 'profile')          return <Profile onBack={goDashboard} />
+  if (page === 'course')           return <Dashboard onLogout={handleLogout} onAdmin={goAdmin} onProfile={goProfile} />
+  if (page === 'admin')            return <Admin onBack={goDashboard} onLogout={handleLogout} />
+  if (page === 'forgot-password')  return <ForgotPassword onBack={goLogin} />
+  if (page === 'reset-password')   return <ResetPassword onSuccess={goLogin} />
+  if (page === '404')              return <NotFound onBack={goDashboard} />
 
   return (
     <div className="bg-mesh min-h-screen">
