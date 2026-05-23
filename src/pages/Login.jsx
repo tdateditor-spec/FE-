@@ -167,13 +167,7 @@ export function Login({ onBack, onSuccess, onMustChange, onForgotPassword }) {
           </div>
           <div className="hidden lg:block" />
 
-          {/* Sign up link */}
-          <p className="text-xs text-slate-500">
-            Chưa có tài khoản?{' '}
-            <button type="button" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
-              Đăng ký
-            </button>
-          </p>
+          <div />
         </div>
 
         {/* Center: form */}
