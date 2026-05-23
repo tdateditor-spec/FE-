@@ -244,8 +244,15 @@ function UserManagement() {
   const [modal, setModal]      = useState(null)
   const [confirmDel, setDel]   = useState(null)
   const [saving, setSaving]    = useState(false)
+  const [formError, setFormError] = useState('')
+  const [toast, setToast]      = useState(null) // { type: 'success'|'error', msg }
   const [actionId, setActionId] = useState(null) // id đang xử lý (edit/delete/lock)
   const [form, setForm]        = useState({ name:'', email:'', phone:'', status:'active', paid:false })
+
+  const showToast = (type, msg) => {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   const load = async (page = 1, q = search, st = statusFilter) => {
     setLoading(true)
@@ -268,21 +275,33 @@ function UserManagement() {
   const onStatusFilter = v => { setStatusFilter(v); load(1, search, v) }
   const goPage = p => load(p, search, statusFilter)
 
-  const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setModal('add') }
-  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid }); setModal(u) }
+  const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setFormError(''); setModal('add') }
+  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid }); setFormError(''); setModal(u) }
 
   const save = async () => {
-    if (!form.name || !form.email) return
+    if (!form.name || !form.email) { setFormError('Vui lòng nhập đầy đủ họ tên và email.'); return }
+    setFormError('')
     setSaving(true)
     try {
       if (modal === 'add') {
         await api.addUser(form)
+        setModal(null)
+        load(pagination.page)
+        showToast('success', `✅ Đã tạo tài khoản & gửi email tới ${form.email}`)
       } else {
         await api.updateUser(modal.id, form)
+        setModal(null)
+        load(pagination.page)
+        showToast('success', 'Cập nhật học viên thành công')
       }
-      setModal(null)
-      load(pagination.page)
-    } catch {} finally { setSaving(false) }
+    } catch (err) {
+      const msg = err.message || ''
+      if (msg.includes('đã tồn tại') || msg.includes('already') || msg.includes('409')) {
+        setFormError('⚠️ Email này đã tồn tại trong hệ thống.')
+      } else {
+        setFormError(msg || 'Có lỗi xảy ra, vui lòng thử lại.')
+      }
+    } finally { setSaving(false) }
   }
 
   const del = async id => {
@@ -458,17 +477,41 @@ function UserManagement() {
         </div>
       </DarkCard>
 
+      {/* Toast notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-2xl"
+            style={{
+              background: toast.type === 'success' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+              borderColor: toast.type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)',
+            }}
+          >
+            <span className="text-[13px] font-medium" style={{ color: toast.type === 'success' ? '#34d399' : '#f87171' }}>
+              {toast.msg}
+            </span>
+            <button onClick={() => setToast(null)} className="text-slate-600 hover:text-white transition-colors ml-1">
+              <X size={13}/>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Add / Edit modal */}
       <AnimatePresence>
         {modal && (
-          <Modal open={!!modal} onClose={()=>setModal(null)}
+          <Modal open={!!modal} onClose={()=>{ setModal(null); setFormError('') }}
             title={modal === 'add' ? 'Thêm học viên' : 'Chỉnh sửa học viên'}>
             <div className="space-y-4">
               <FormField label="Họ tên *">
-                <DarkInput value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="Nguyễn Văn A"/>
+                <DarkInput value={form.name} onChange={e=>{ setForm(p=>({...p,name:e.target.value})); setFormError('') }} placeholder="Nguyễn Văn A"/>
               </FormField>
               <FormField label="Email *">
-                <DarkInput type="email" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} placeholder="email@example.com"/>
+                <DarkInput type="email" value={form.email} onChange={e=>{ setForm(p=>({...p,email:e.target.value})); setFormError('') }} placeholder="email@example.com"/>
               </FormField>
               <FormField label="Số điện thoại">
                 <DarkInput value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="09xx xxx xxx"/>
@@ -489,9 +532,29 @@ function UserManagement() {
                 </div>
                 <span className="text-[13px] text-slate-300">Đã thanh toán</span>
               </label>
+
+              {/* Form error */}
+              {formError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5"
+                >
+                  <AlertTriangle size={13} className="text-red-400 flex-shrink-0"/>
+                  <p className="text-[12px] text-red-400">{formError}</p>
+                </motion.div>
+              )}
+
+              {/* Info: email will be sent */}
+              {modal === 'add' && !formError && (
+                <div className="flex items-center gap-2 rounded-xl border border-blue-500/15 bg-blue-500/[0.06] px-3 py-2.5">
+                  <Check size={12} className="text-blue-400 flex-shrink-0"/>
+                  <p className="text-[12px] text-blue-400">Mật khẩu tạm sẽ được gửi tự động tới email học viên.</p>
+                </div>
+              )}
             </div>
-            <ModalFooter onCancel={()=>setModal(null)} onConfirm={save}
-              confirmLabel={saving ? 'Đang lưu...' : modal==='add' ? 'Thêm học viên' : 'Lưu thay đổi'}/>
+            <ModalFooter onCancel={()=>{ setModal(null); setFormError('') }} onConfirm={save}
+              confirmLabel={saving ? 'Đang lưu...' : modal==='add' ? 'Thêm & gửi email' : 'Lưu thay đổi'}/>
           </Modal>
         )}
       </AnimatePresence>
