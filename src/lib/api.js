@@ -4,9 +4,31 @@ function getToken() {
   return localStorage.getItem('vfs_token')
 }
 
+// Kiểm tra token có hết hạn chưa (dựa vào exp trong payload)
+function isTokenExpired(token) {
+  try {
+    const base64  = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')))
+    return payload.exp * 1000 < Date.now()
+  } catch { return true }
+}
+
+function clearSession() {
+  localStorage.removeItem('vfs_token')
+  localStorage.removeItem('vfs_must_change')
+}
+
 async function request(method, path, body) {
-  const headers = { 'Content-Type': 'application/json' }
   const token = getToken()
+
+  // Nếu token hết hạn → xoá và redirect login
+  if (token && isTokenExpired(token)) {
+    clearSession()
+    window.location.href = '/login'
+    throw new Error('Phiên đăng nhập đã hết hạn')
+  }
+
+  const headers = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   const res = await fetch(`${BASE}${path}`, {
@@ -14,6 +36,13 @@ async function request(method, path, body) {
     headers,
     body: body ? JSON.stringify(body) : undefined,
   })
+
+  // Server trả 401 → token không hợp lệ → logout
+  if (res.status === 401) {
+    clearSession()
+    window.location.href = '/login'
+    throw new Error('Phiên đăng nhập đã hết hạn')
+  }
 
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || 'Lỗi máy chủ')
@@ -54,6 +83,11 @@ export const api = {
   },
   mustChangePassword: () => localStorage.getItem('vfs_must_change') === '1',
   clearMustChange: () => localStorage.removeItem('vfs_must_change'),
-  clearToken: () => localStorage.removeItem('vfs_token'),
-  isLoggedIn: () => !!getToken(),
+  clearToken: () => clearSession(),
+  isLoggedIn: () => {
+    const token = getToken()
+    if (!token) return false
+    if (isTokenExpired(token)) { clearSession(); return false }
+    return true
+  },
 }
