@@ -37,8 +37,9 @@ async function request(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  // Server trả 401 → token không hợp lệ → logout
-  if (res.status === 401) {
+  // Server trả 401 + đang có token → token không hợp lệ → logout
+  // Không áp dụng cho login (chưa có token)
+  if (res.status === 401 && token) {
     clearSession()
     window.location.href = '/login'
     throw new Error('Phiên đăng nhập đã hết hạn')
