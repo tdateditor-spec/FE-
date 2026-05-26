@@ -1,7 +1,22 @@
-import { useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
-import { AnimatedGradientText } from '../ui/AnimatedGradientText'
-import { TracingBeam } from '../ui/TracingBeam'
+import { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
+import { AnimatedGradientText } from '../ui/AnimatedGradientText';
+import { TracingBeam } from '../ui/TracingBeam';
+
+const phase7 = {
+  label: '🎯 Giai Đoạn 7',
+  name: 'Tổng Kết & Định Hướng Mới',
+  range: 'Ngày 90',
+  desc: 'Một phần thưởng đặc biệt dành riêng cho những ai hoàn thành toàn bộ hành trình 90 ngày: bạn sẽ có một buổi call 1:1 cùng team để cùng nhau nhìn lại kết quả và xây dựng lộ trình phát triển tiếp theo. Đây là đặc quyền chỉ dành cho những người thực sự cam kết đi đến cuối hành trình.\n\nĐây không phải là điểm kết thúc, mà là điểm bắt đầu cho giai đoạn tiếp theo của bạn.\n\nTrong ngày này, bạn sẽ nhìn lại toàn bộ hành trình 90 ngày vừa qua, từ lúc bắt đầu với con số 0 cho đến khi bạn đã có kỹ năng editing, có portfolio và những khách hàng đầu tiên. Bạn sẽ hiểu rõ mình đã tiến xa như thế nào, đang ở đâu và cần cải thiện điều gì để đi xa hơn.\n\nBạn sẽ được hướng dẫn xây dựng "30 Day Action Plan" chi tiết cho 30 ngày tiếp theo, tập trung vào việc tăng thu nhập từ video editing, tối ưu quy trình làm việc và nâng cấp hệ thống cá nhân.\n\nBên cạnh đó, bạn sẽ học cách duy trì kỷ luật và chịu trách nhiệm để không bị mất động lực giữa chừng, đặc biệt là sau khi đã có những kết quả ban đầu.',
+  result: 'Bạn có một roadmap rõ ràng cho giai đoạn tiếp theo, biết chính xác mình cần làm gì để đi từ thu nhập đầu tiên đến thu nhập ổn định và phát triển lâu dài với nghề Video Editing.',
+  highlight: true,
+}
+
+const phase7Color = {
+  badge: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
+  result: 'border-emerald-500/20 bg-emerald-950/20 text-emerald-200',
+  connector: 'bg-emerald-500/30',
+}
 
 const chapters = [
   {
@@ -99,66 +114,75 @@ const chapters = [
         name: 'Scale & Tự Do',
         range: 'Ngày 76–89',
         desc: 'Bạn sẽ học cách tăng giá dịch vụ, xây dựng hệ thống khách hàng ổn định, nâng cấp kỹ năng và tốc độ làm việc, từ đó từng bước xây dựng nền tảng cho một lifestyle business.',
-        result: 'Bạn có thu nhập ổn định và khả năng làm việc từ bất cứ đâu chỉ với một chiếc laptop.',
-      },
-      {
-        label: '🎯 Giai Đoạn 7',
-        name: 'Tổng Kết & Định Hướng Mới',
-        range: 'Ngày 90',
-        desc: 'Một phần thưởng đặc biệt dành riêng cho những ai hoàn thành toàn bộ hành trình 90 ngày: bạn sẽ có một buổi call 1:1 cùng team để cùng nhau nhìn lại kết quả và xây dựng lộ trình phát triển tiếp theo. Đây là đặc quyền chỉ dành cho những người thực sự cam kết đi đến cuối hành trình.\n\nĐây không phải là điểm kết thúc, mà là điểm bắt đầu cho giai đoạn tiếp theo của bạn.\n\nTrong ngày này, bạn sẽ nhìn lại toàn bộ hành trình 90 ngày vừa qua, từ lúc bắt đầu với con số 0 cho đến khi bạn đã có kỹ năng editing, có portfolio và những khách hàng đầu tiên. Bạn sẽ hiểu rõ mình đã tiến xa như thế nào, đang ở đâu và cần cải thiện điều gì để đi xa hơn.\n\nBạn sẽ được hướng dẫn xây dựng "30 Day Action Plan" chi tiết cho 30 ngày tiếp theo, tập trung vào việc tăng thu nhập từ video editing, tối ưu quy trình làm việc và nâng cấp hệ thống cá nhân.\n\nBên cạnh đó, bạn sẽ học cách duy trì kỷ luật và chịu trách nhiệm để không bị mất động lực giữa chừng, đặc biệt là sau khi đã có những kết quả ban đầu.',
-        result: 'Bạn có một roadmap rõ ràng cho giai đoạn tiếp theo, biết chính xác mình cần làm gì để đi từ thu nhập đầu tiên đến thu nhập ổn định và phát triển lâu dài với nghề Video Editing.',
-        highlight: true,
+        result:
+          'Bạn có thu nhập ổn định và khả năng làm việc từ bất cứ đâu chỉ với một chiếc laptop.',
       },
     ],
   },
-]
+];
 
 function PhaseCard({ phase, color, index, chapterInView }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -16 }}
       animate={chapterInView ? { opacity: 1, x: 0 } : {}}
-      transition={{ duration: 0.4, delay: 0.15 + index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        duration: 0.4,
+        delay: 0.15 + index * 0.1,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       className="relative flex gap-4"
     >
       {/* Phase connector dot */}
       <div className="relative flex flex-col items-center flex-shrink-0 w-3 mt-1.5">
-        <div className={`w-2.5 h-2.5 rounded-full border-2 z-10 flex-shrink-0 ${phase.highlight ? 'bg-emerald-400 border-emerald-300' : 'bg-slate-700 border-slate-500'}`} />
+        <div
+          className={`w-2.5 h-2.5 rounded-full border-2 z-10 flex-shrink-0 ${phase.highlight ? 'bg-emerald-400 border-emerald-300' : 'bg-slate-700 border-slate-500'}`}
+        />
       </div>
 
       {/* Card */}
-      <div className={`flex-1 mb-3 rounded-2xl border overflow-hidden transition-all
-        ${phase.highlight
-          ? 'border-emerald-500/30 shadow-[0_0_24px_rgba(16,185,129,0.1)]'
-          : 'border-white/[0.07] hover:border-white/[0.13]'
+      <div
+        className={`flex-1 mb-3 rounded-2xl border overflow-hidden transition-all
+        ${
+          phase.highlight
+            ? 'border-emerald-500/30 shadow-[0_0_24px_rgba(16,185,129,0.1)]'
+            : 'border-white/[0.07] hover:border-white/[0.13]'
         }`}
       >
-        <div className={`p-4 ${phase.highlight ? 'bg-emerald-950/15' : 'bg-white/[0.02]'}`}>
+        <div
+          className={`p-4 ${phase.highlight ? 'bg-emerald-950/15' : 'bg-white/[0.02]'}`}
+        >
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${phase.highlight ? 'bg-emerald-600 border-emerald-500 text-white' : color.badge}`}>
+            <span className="text-[10px] text-slate-500">{phase.range}</span>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${phase.highlight ? 'bg-emerald-600 border-emerald-500 text-white' : color.badge}`}
+            >
               {phase.label}
             </span>
-            <span className="text-[10px] text-slate-500">{phase.range}</span>
           </div>
-          <h4 className="font-heading text-sm font-bold text-white mb-2">{phase.name}</h4>
+          <h4 className="font-heading text-sm font-bold text-white mb-2">
+            {phase.name}
+          </h4>
           <div className="text-xs leading-relaxed text-slate-400 mb-3 space-y-2">
             {phase.desc.split('\n\n').map((para, i) => (
               <p key={i}>{para}</p>
             ))}
           </div>
-          <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 ${phase.highlight ? color.result : color.result}`}>
+          <div
+            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 ${phase.highlight ? color.result : color.result}`}
+          >
             <span className="text-xs flex-shrink-0">✓</span>
             <p className="text-xs font-medium leading-snug">{phase.result}</p>
           </div>
         </div>
       </div>
     </motion.div>
-  )
+  );
 }
 
 function ChapterBlock({ chapter, index }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
 
   return (
     <motion.div
@@ -173,19 +197,27 @@ function ChapterBlock({ chapter, index }) {
         <motion.div
           initial={{ scale: 0 }}
           animate={inView ? { scale: 1 } : {}}
-          transition={{ delay: index * 0.1 + 0.1, type: 'spring', stiffness: 260 }}
+          transition={{
+            delay: index * 0.1 + 0.1,
+            type: 'spring',
+            stiffness: 260,
+          }}
           className={`w-12 h-12 rounded-2xl flex items-center justify-center border flex-shrink-0 font-heading font-bold text-sm ring-4 ${chapter.color.icon} ${chapter.color.ring}`}
         >
           {chapter.num}
         </motion.div>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-0.5">
-            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${chapter.color.badge}`}>
+            <span
+              className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${chapter.color.badge}`}
+            >
               {chapter.label}
             </span>
             <span className="text-xs text-slate-500">{chapter.range}</span>
           </div>
-          <h3 className="font-heading font-bold text-white text-base">{chapter.title}</h3>
+          <h3 className="font-heading font-bold text-white text-base">
+            {chapter.title}
+          </h3>
           <p className="text-xs text-slate-500 mt-0.5">{chapter.desc}</p>
         </div>
       </div>
@@ -193,7 +225,9 @@ function ChapterBlock({ chapter, index }) {
       {/* Phase cards with left connector line */}
       <div className="ml-16 relative">
         {/* Vertical connector */}
-        <div className={`absolute left-[5px] top-2 bottom-6 w-px ${chapter.color.connector}`} />
+        <div
+          className={`absolute left-[5px] top-2 bottom-6 w-px ${chapter.color.connector}`}
+        />
 
         <div className="space-y-0">
           {chapter.phases.map((phase, i) => (
@@ -208,12 +242,12 @@ function ChapterBlock({ chapter, index }) {
         </div>
       </div>
     </motion.div>
-  )
+  );
 }
 
 export function Roadmap() {
-  const headerRef = useRef(null)
-  const headerInView = useInView(headerRef, { once: true })
+  const headerRef = useRef(null);
+  const headerInView = useInView(headerRef, { once: true });
 
   return (
     <section id="roadmap" className="py-24 px-6 bg-slate-900/20">
@@ -228,13 +262,16 @@ export function Roadmap() {
         >
           <div className="inline-flex items-center gap-2 mb-5 rounded-full border border-blue-500/40 bg-blue-500/15 px-6 py-2.5 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
             <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
-            <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-300">Lộ Trình 90 Ngày</span>
+            <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-300">
+              Lộ Trình 90 Ngày
+            </span>
           </div>
           <h2 className="font-heading mb-4 text-4xl font-extrabold text-white md:text-5xl leading-tight">
             <AnimatedGradientText>Mindset → Skill → Sales</AnimatedGradientText>
           </h2>
           <p className="mt-3 text-slate-300 max-w-xl mx-auto text-base leading-relaxed">
-            Hệ thống 3 chương giúp bạn đi từ con số 0 đến có kỹ năng, có khách hàng và xây dựng thu nhập tự do.
+            Hệ thống 3 chương giúp bạn đi từ con số 0 đến có kỹ năng, có khách
+            hàng và xây dựng thu nhập tự do.
           </p>
         </motion.div>
 
@@ -248,7 +285,9 @@ export function Roadmap() {
           {chapters.map((c, i) => (
             <div key={c.id} className="flex items-center flex-1">
               <div className="flex flex-col items-center gap-1 flex-1">
-                <div className={`text-[10px] font-bold px-3 py-1 rounded-full border ${c.color.badge}`}>
+                <div
+                  className={`text-[10px] font-bold px-3 py-1 rounded-full border ${c.color.badge}`}
+                >
                   {c.label}
                 </div>
                 <span className="text-[9px] text-slate-600">{c.range}</span>
@@ -275,14 +314,23 @@ export function Roadmap() {
             viewport={{ once: true }}
             className="mt-10 flex items-center gap-3"
           >
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">✓</div>
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+              ✓
+            </div>
             <div>
-              <p className="text-sm font-bold text-white">Ngày 90: Thu Nhập Tự Do</p>
-              <p className="text-xs text-slate-500">Kỹ năng, client, thu nhập và hệ thống trong tay bạn.</p>
+              <p className="text-sm font-bold text-white">
+                Ngày 90: Thu Nhập Tự Do
+              </p>
+              <p className="text-xs text-slate-500">
+                Kỹ năng, client, thu nhập và hệ thống trong tay bạn.
+              </p>
             </div>
           </motion.div>
+          <div className="mt-6 ml-6 md:ml-14">
+            <PhaseCard phase={phase7} color={phase7Color} index={0} chapterInView={true} />
+          </div>
         </TracingBeam>
       </div>
     </section>
-  )
+  );
 }
