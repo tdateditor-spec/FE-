@@ -79,45 +79,6 @@ function fmtSecs(s) {
 }
 
 
-/* ─── Scroll passthrough wrapper for iframes ─────────────────────────────── */
-function VideoScrollWrapper({ children }) {
-  const [active, setActive] = useState(false);
-  const wrapRef = useRef(null);
-
-  useEffect(() => {
-    if (!active) return;
-    const handler = (e) => {
-      if (!wrapRef.current?.contains(e.target)) setActive(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [active]);
-
-  return (
-    <div ref={wrapRef} className="relative w-full">
-      {children}
-      {!active && (
-        <div
-          className="absolute inset-0 z-[1] cursor-pointer"
-          onWheel={(e) => {
-            e.preventDefault();
-            let el = e.currentTarget.parentElement;
-            while (el) {
-              const s = window.getComputedStyle(el);
-              if (/auto|scroll/.test(s.overflow + s.overflowY) && el.scrollHeight > el.clientHeight) {
-                el.scrollTop += e.deltaY;
-                return;
-              }
-              el = el.parentElement;
-            }
-          }}
-          onClick={() => setActive(true)}
-        />
-      )}
-    </div>
-  );
-}
-
 /* ─── Video Player ────────────────────────────────────────────────────────── */
 function VideoPlayer({ lesson }) {
   const [playing, setPlaying] = useState(false);
@@ -155,27 +116,24 @@ function VideoPlayer({ lesson }) {
   // Google Drive: hiện iframe thẳng, không cần poster (Drive không hỗ trợ autoplay)
   if (isDrive && embedUrl) {
     return (
-      <VideoScrollWrapper>
-        <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
-          <iframe
-            src={embedUrl}
-            className="absolute inset-0 w-full h-full"
-            frameBorder="0"
-            allow="autoplay"
-            allowFullScreen
-            title={lesson?.title}
-          />
-          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
-            <Clock size={10} />
-            {displayDuration}
-          </div>
+      <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
+        <iframe
+          src={embedUrl}
+          className="absolute inset-0 w-full h-full"
+          frameBorder="0"
+          allow="autoplay"
+          allowFullScreen
+          title={lesson?.title}
+        />
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
+          <Clock size={10} />
+          {displayDuration}
         </div>
-      </VideoScrollWrapper>
+      </div>
     );
   }
 
   return (
-    <VideoScrollWrapper>
     <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
 
       {/* Iframe pre-rendered cho YouTube/Vimeo */}
@@ -229,7 +187,7 @@ function VideoPlayer({ lesson }) {
           </div>
           <button
             onClick={handlePlay}
-            className="absolute inset-0 z-[2] flex items-center justify-center group"
+            className="absolute inset-0 flex items-center justify-center group"
           >
             <motion.div
               whileHover={{ scale: 1.08 }}
@@ -246,7 +204,6 @@ function VideoPlayer({ lesson }) {
         </>
       )}
     </div>
-    </VideoScrollWrapper>
   );
 }
 
