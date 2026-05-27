@@ -800,13 +800,13 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
           </div>
         </header>
 
+        {/* Video player — ngoài vùng scroll để tránh iframe bắt scroll event */}
+        <div className="flex-shrink-0 w-full bg-black">
+          <VideoPlayer lesson={activeLesson} key={activeLesson?.id} />
+        </div>
+
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">
-          {/* Video player — full width, no padding */}
-          <div className="w-full bg-black">
-            <VideoPlayer lesson={activeLesson} key={activeLesson?.id} />
-          </div>
-
           {/* Content area */}
           <div className="px-6 py-5 max-w-4xl">
             {/* Lesson title + mark done */}
