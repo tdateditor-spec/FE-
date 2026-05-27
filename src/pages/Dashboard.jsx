@@ -59,17 +59,6 @@ function flattenLessons(chapters) {
   );
 }
 
-const lessonContent = {
-  L4: {
-    points: [
-      'Phân tích ngược từ mục tiêu $1,000 xuống hành động hàng ngày',
-      'Cách tính rate freelance phù hợp với thị trường quốc tế',
-      'Timeline thực tế: tuần 1-4 bạn cần đạt được gì',
-      'Bài tập: viết 3 mục tiêu cụ thể có deadline rõ ràng',
-    ],
-    transcript: `Trong bài học này, chúng ta sẽ cùng nhau thiết lập mục tiêu $1,000 đầu tiên một cách cụ thể và khoa học.\n\nHầu hết mọi người đặt mục tiêu theo kiểu "tôi muốn kiếm nhiều tiền hơn" — mơ hồ, không có timeline. Cách đó không hiệu quả.\n\n$1,000/tháng = 2-3 client quốc tế trả $300-500/tháng. Bài tập: viết 3 mục tiêu SMART ngay bây giờ.`,
-  },
-};
 const lessonResources = [
   { name: 'Template mục tiêu SMART.pdf', size: '245 KB', type: 'pdf' },
   { name: 'Bảng tính rate freelance.xlsx', size: '128 KB', type: 'xlsx' },
@@ -131,11 +120,11 @@ function getEmbedUrl(url) {
   const vimeo = url.match(/vimeo\.com\/(\d+)/);
   if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1`;
   const driveFile = url.match(/drive\.google\.com\/file\/d\/([^/?&\s]+)/);
-  if (driveFile) return `https://drive.google.com/file/d/${driveFile[1]}/preview`;
+  if (driveFile) return `https://drive.google.com/file/d/${driveFile[1]}/preview?rm=minimal`;
   const driveOpen = url.match(/drive\.google\.com\/open\?id=([^&\s]+)/);
-  if (driveOpen) return `https://drive.google.com/file/d/${driveOpen[1]}/preview`;
+  if (driveOpen) return `https://drive.google.com/file/d/${driveOpen[1]}/preview?rm=minimal`;
   if (url.includes('drive.google.com/file/d/') && url.includes('/preview'))
-    return url;
+    return url.includes('rm=minimal') ? url : url + '?rm=minimal';
   return null;
 }
 
@@ -194,7 +183,7 @@ function VideoPlayer({ lesson }) {
           allowFullScreen
           title={lesson?.title}
         />
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
+<div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
           <Clock size={10} />
           {displayDuration}
         </div>
@@ -278,55 +267,58 @@ function VideoPlayer({ lesson }) {
 
 /* ─── Tab: Content ────────────────────────────────────────────────────────── */
 function TabContent({ lesson }) {
-  const c = lessonContent[lesson.id] || lessonContent['L4'];
+  const points = (lesson?.keyPoints || '').split('\n').filter(Boolean);
+  const tags   = (lesson?.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Star size={13} className="text-yellow-500" /> Điểm chính trong bài
-        </h3>
-        <ul className="space-y-2.5">
-          {c.points.map((pt, i) => (
-            <motion.li
-              key={i}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.07 }}
-              className="flex items-start gap-3"
-            >
-              <div className="flex-shrink-0 h-5 w-5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mt-0.5">
-                <span className="text-[9px] font-bold text-primary">
-                  {i + 1}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {pt}
-              </p>
-            </motion.li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <FileText size={13} className="text-muted-foreground" /> Nội dung bài
-          giảng
-        </h3>
-        <div className="rounded-xl border bg-muted/40 p-4">
-          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-            {c.transcript}
-          </p>
+      {points.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Star size={13} className="text-yellow-500" /> Điểm chính trong bài
+          </h3>
+          <ul className="space-y-2.5">
+            {points.map((pt, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.07 }}
+                className="flex items-start gap-3"
+              >
+                <div className="flex-shrink-0 h-5 w-5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mt-0.5">
+                  <span className="text-[9px] font-bold text-primary">{i + 1}</span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{pt}</p>
+              </motion.li>
+            ))}
+          </ul>
         </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {['Mindset', 'Mục tiêu', 'Freelance', '$1,000 đầu tiên'].map((t) => (
-          <span
-            key={t}
-            className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-          >
-            {t}
-          </span>
-        ))}
-      </div>
+      )}
+      {lesson?.content && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <FileText size={13} className="text-muted-foreground" /> Nội dung bài giảng
+          </h3>
+          <div className="rounded-xl border bg-muted/40 p-4">
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+              {lesson.content}
+            </p>
+          </div>
+        </div>
+      )}
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {tags.map(t => (
+            <span key={t} className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+      {points.length === 0 && !lesson?.content && tags.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-8">Chưa có nội dung. Admin có thể thêm tại trang quản lý.</p>
+      )}
     </div>
   );
 }

@@ -583,7 +583,7 @@ function ModuleManagement({ chapters, setChapters }) {
   const [delL, setDelL]       = useState(null)
   const [actionId, setActionId] = useState(null)
   const [chForm, setChForm]   = useState({ title:'', description:'' })
-  const [lForm, setLForm]     = useState({ title:'', duration:'', free:false, videoUrl:'' })
+  const [lForm, setLForm]     = useState({ title:'', duration:'', free:false, videoUrl:'', keyPoints:'', content:'', tags:'' })
 
   const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
 
@@ -733,7 +733,7 @@ function ModuleManagement({ chapters, setChapters }) {
                                     </svg>
                                   ) : (
                                     <>
-                                      <button onClick={()=>{setLForm({title:l.title,duration:l.duration,free:l.free,videoUrl:l.videoUrl||''});setLModal({mode:'edit',ch,l})}}
+                                      <button onClick={()=>{setLForm({title:l.title,duration:l.duration,free:l.free,videoUrl:l.videoUrl||'',keyPoints:l.keyPoints||'',content:l.content||'',tags:l.tags||''});setLModal({mode:'edit',ch,l})}}
                                         className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
                                         <Edit2 size={11}/>
                                       </button>
@@ -791,6 +791,27 @@ function ModuleManagement({ chapters, setChapters }) {
               </FormField>
               <FormField label="URL Video" hint={lForm.videoUrl ? '✓ Đã có URL video' : 'Hỗ trợ YouTube & Vimeo'}>
                 <DarkInput type="url" value={lForm.videoUrl} onChange={e=>setLForm(p=>({...p,videoUrl:e.target.value}))} placeholder="https://www.youtube.com/watch?v=..."/>
+              </FormField>
+              <FormField label="Điểm chính trong bài" hint="Mỗi dòng = 1 điểm">
+                <textarea
+                  value={lForm.keyPoints}
+                  onChange={e=>setLForm(p=>({...p,keyPoints:e.target.value}))}
+                  placeholder={"Phân tích ngược từ mục tiêu $1,000\nCách tính rate freelance\nTimeline tuần 1-4"}
+                  rows={4}
+                  className="w-full rounded-lg bg-white/[0.04] border border-white/[0.08] px-3 py-2 text-[13px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 resize-none"
+                />
+              </FormField>
+              <FormField label="Nội dung bài giảng">
+                <textarea
+                  value={lForm.content}
+                  onChange={e=>setLForm(p=>({...p,content:e.target.value}))}
+                  placeholder="Mô tả nội dung chi tiết bài học..."
+                  rows={5}
+                  className="w-full rounded-lg bg-white/[0.04] border border-white/[0.08] px-3 py-2 text-[13px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 resize-none"
+                />
+              </FormField>
+              <FormField label="Tags" hint="Phân cách bằng dấu phẩy">
+                <DarkInput value={lForm.tags} onChange={e=>setLForm(p=>({...p,tags:e.target.value}))} placeholder="VD: Mindset, Mục tiêu, Freelance"/>
               </FormField>
               <label className="flex items-center gap-3 cursor-pointer">
                 <div onClick={()=>setLForm(p=>({...p,free:!p.free}))}
