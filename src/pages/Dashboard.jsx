@@ -98,7 +98,7 @@ function VideoScrollWrapper({ children }) {
       {children}
       {!active && (
         <div
-          className="absolute inset-0 z-20 cursor-pointer"
+          className="absolute inset-0 z-[1] cursor-pointer"
           onWheel={(e) => {
             e.preventDefault();
             let el = e.currentTarget.parentElement;
@@ -229,7 +229,7 @@ function VideoPlayer({ lesson }) {
           </div>
           <button
             onClick={handlePlay}
-            className="absolute inset-0 flex items-center justify-center group"
+            className="absolute inset-0 z-[2] flex items-center justify-center group"
           >
             <motion.div
               whileHover={{ scale: 1.08 }}
