@@ -370,8 +370,8 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
 
   // Load chapters + tiến độ từ API
   useEffect(() => {
-    Promise.all([api.getCourses(), api.getProgress()])
-      .then(([courseData, progressData]) => {
+    api.getCourses()
+      .then((courseData) => {
         const raw = courseData.chapters || [];
         const styled = raw.map((ch, ci) => ({
           ...ch,
@@ -381,12 +381,21 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
         const initialOpen = {};
         styled.forEach((ch) => { initialOpen[ch.id] = !ch.locked; });
         setOpenChapters(initialOpen);
-        const doneSet = new Set(progressData.done || []);
-        setDoneIds(doneSet);
-        const allL = flattenLessons(styled);
-        const unlockedL = allL.filter((l) => !l.locked);
-        const first = unlockedL.find((l) => !doneSet.has(l.id)) || unlockedL[0];
-        if (first) setActiveLesson(first);
+
+        api.getProgress()
+          .then(({ done }) => {
+            const doneSet = new Set(done || []);
+            setDoneIds(doneSet);
+            const allL = flattenLessons(styled);
+            const unlockedL = allL.filter((l) => !l.locked);
+            const first = unlockedL.find((l) => !doneSet.has(l.id)) || unlockedL[0];
+            if (first) setActiveLesson(first);
+          })
+          .catch(() => {
+            const allL = flattenLessons(styled);
+            const first = allL.find((l) => !l.locked) || allL[0];
+            if (first) setActiveLesson(first);
+          });
       })
       .catch(() => {})
       .finally(() => setLoadingCourse(false));
