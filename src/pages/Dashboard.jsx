@@ -7,17 +7,10 @@ import {
   ChevronDown,
   ChevronRight,
   LogOut,
-  BookOpen,
   Clock,
-  Download,
-  MessageSquare,
   Bell,
   FileText,
-  StickyNote,
-  Send,
-  ThumbsUp,
   Star,
-  Paperclip,
   GraduationCap,
   PlayCircle,
   ChevronLeft,
@@ -59,41 +52,6 @@ function flattenLessons(chapters) {
   );
 }
 
-const lessonResources = [
-  { name: 'Template mục tiêu SMART.pdf', size: '245 KB', type: 'pdf' },
-  { name: 'Bảng tính rate freelance.xlsx', size: '128 KB', type: 'xlsx' },
-  { name: 'Roadmap 90 ngày (printable).pdf', size: '1.2 MB', type: 'pdf' },
-];
-const discussions = [
-  {
-    id: 1,
-    user: 'Minh Anh',
-    avatar: 'MA',
-    time: '2 ngày trước',
-    likes: 12,
-    text: 'Mình đã áp dụng phương pháp phân tích ngược này và thực sự thấy rõ hướng đi hơn rất nhiều!',
-    replies: [
-      {
-        id: 2,
-        user: 'Huy Trainer',
-        avatar: 'HT',
-        time: '1 ngày trước',
-        likes: 5,
-        isInstructor: true,
-        text: 'Tuyệt vời! Chia sẻ kết quả sau 30 ngày nhé.',
-      },
-    ],
-  },
-  {
-    id: 3,
-    user: 'Kiên',
-    avatar: 'K',
-    time: '5 ngày trước',
-    likes: 8,
-    text: 'Câu hỏi về rate: mới bắt đầu có nên nhận job $50 để xây portfolio không ạ?',
-    replies: [],
-  },
-];
 
 /* ─── Video helpers ───────────────────────────────────────────────────────── */
 
@@ -324,201 +282,7 @@ function TabContent({ lesson }) {
 }
 
 /* ─── Tab: Notes ──────────────────────────────────────────────────────────── */
-function TabNotes() {
-  const [note, setNote] = useState('');
-  const [saved, setSaved] = useState(false);
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-          <StickyNote size={13} className="text-yellow-500" /> Ghi chú cá nhân
-        </h3>
-        <p className="text-xs text-muted-foreground">Chỉ bạn thấy</p>
-      </div>
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Ghi lại những điểm quan trọng..."
-        rows={10}
-        className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
-      />
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">{note.length} ký tự</p>
-        <button
-          onClick={() => {
-            setSaved(true);
-            setTimeout(() => setSaved(false), 2000);
-          }}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${saved ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
-        >
-          {saved ? (
-            <>
-              <CheckCircle2 size={12} /> Đã lưu
-            </>
-          ) : (
-            'Lưu ghi chú'
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
 
-/* ─── Tab: Resources ──────────────────────────────────────────────────────── */
-function TabResources() {
-  const icons = { pdf: '📄', xlsx: '📊', mp4: '🎬', zip: '📦' };
-  return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-        <Paperclip size={13} className="text-muted-foreground" /> Tài liệu đính
-        kèm
-      </h3>
-      {lessonResources.map((r, i) => (
-        <motion.div
-          key={r.name}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.08 }}
-          className="flex items-center justify-between rounded-xl border bg-card p-4 hover:bg-accent transition-all cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xl">{icons[r.type] || '📎'}</span>
-            <div>
-              <p className="text-sm text-foreground font-medium">{r.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{r.size}</p>
-            </div>
-          </div>
-          <button className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-            <Download size={12} /> Tải xuống
-          </button>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Tab: Discussion ─────────────────────────────────────────────────────── */
-function TabDiscussion() {
-  const [newQ, setNewQ] = useState('');
-  const [threads, setThreads] = useState(discussions);
-  const [openReply, setOpenReply] = useState(null);
-  const post = () => {
-    if (!newQ.trim()) return;
-    setThreads((p) => [
-      {
-        id: Date.now(),
-        user: 'Bạn',
-        avatar: 'B',
-        time: 'Vừa xong',
-        likes: 0,
-        text: newQ,
-        replies: [],
-      },
-      ...p,
-    ]);
-    setNewQ('');
-  };
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border bg-card p-4">
-        <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-          <MessageSquare size={13} className="text-primary" /> Đặt câu hỏi
-        </p>
-        <textarea
-          value={newQ}
-          onChange={(e) => setNewQ(e.target.value)}
-          placeholder="Hỏi bất cứ điều gì..."
-          rows={3}
-          className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none focus:border-primary/50 transition-all"
-        />
-        <div className="flex justify-end mt-2">
-          <button
-            onClick={post}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all"
-          >
-            <Send size={12} /> Gửi câu hỏi
-          </button>
-        </div>
-      </div>
-      {threads.map((t) => (
-        <div key={t.id} className="rounded-xl border bg-card p-4">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="h-8 w-8 flex-shrink-0 rounded-xl bg-muted flex items-center justify-center text-xs font-bold text-foreground">
-              {t.avatar}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">
-                  {t.user}
-                </span>
-                <span className="text-xs text-muted-foreground">{t.time}</span>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mt-1">
-                {t.text}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 pl-11 mb-2">
-            <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
-              <ThumbsUp size={11} /> {t.likes}
-            </button>
-            <button
-              onClick={() => setOpenReply(openReply === t.id ? null : t.id)}
-              className="text-xs text-muted-foreground hover:text-primary"
-            >
-              Trả lời
-            </button>
-          </div>
-          {t.replies.map((r) => (
-            <div
-              key={r.id}
-              className="ml-11 mt-3 rounded-xl border bg-muted/30 p-3 flex gap-3"
-            >
-              <div
-                className={`h-7 w-7 flex-shrink-0 rounded-xl flex items-center justify-center text-[10px] font-bold text-white ${r.isInstructor ? 'bg-primary' : 'bg-muted-foreground'}`}
-              >
-                {r.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-foreground">
-                    {r.user}
-                  </span>
-                  {r.isInstructor && (
-                    <span className="rounded-xl bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-                      TRAINER
-                    </span>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {r.time}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-1">
-                  {r.text}
-                </p>
-              </div>
-            </div>
-          ))}
-          {openReply === t.id && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="ml-11 mt-3 flex gap-2"
-            >
-              <input
-                placeholder="Viết trả lời..."
-                className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50"
-              />
-              <button className="rounded-xl bg-primary px-3 py-2 text-primary-foreground hover:bg-primary/90">
-                <Send size={12} />
-              </button>
-            </motion.div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /* ─── Lesson Thumbnail ────────────────────────────────────────────────────── */
 function LessonThumb({ lesson, isActive, isDone, isLocked }) {
@@ -586,7 +350,6 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
   const [chapters, setChapters] = useState([]);
   const [loadingCourse, setLoadingCourse] = useState(true);
   const [activeLesson, setActiveLesson] = useState(null);
-  const [tab, setTab] = useState('content');
   const [doneIds, setDoneIds] = useState(new Set());
   const [openChapters, setOpenChapters] = useState({});
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -653,19 +416,11 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
 
   const selectLesson = (l) => {
     setActiveLesson(l);
-    setTab('content');
   };
   const markDone = () => {
     setDoneIds((prev) => new Set([...prev, activeLesson.id]));
     if (nextLesson) selectLesson(nextLesson);
   };
-
-  const tabs = [
-    { id: 'content', label: 'Nội dung', icon: BookOpen },
-    { id: 'notes', label: 'Ghi chú', icon: StickyNote },
-    { id: 'resources', label: 'Tài liệu', icon: Download },
-    { id: 'discussion', label: 'Thảo luận', icon: MessageSquare },
-  ];
 
   if (loadingCourse) {
     return (
@@ -1082,41 +837,8 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
               )}
             </div>
 
-            {/* Tabs */}
-            <div className="border-b border-white/[0.07] mb-5">
-              <div className="flex gap-0">
-                {tabs.map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setTab(id)}
-                    className={`flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition-all ${
-                      tab === id
-                        ? 'border-blue-500 text-white'
-                        : 'border-transparent text-slate-500 hover:text-slate-300'
-                    }`}
-                  >
-                    <Icon size={12} />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Tab content */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={tab}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                {tab === 'content' && <TabContent lesson={activeLesson} />}
-                {tab === 'notes' && <TabNotes />}
-                {tab === 'resources' && <TabResources />}
-                {tab === 'discussion' && <TabDiscussion />}
-              </motion.div>
-            </AnimatePresence>
+            <TabContent lesson={activeLesson} />
 
             {/* Prev / Next nav cards */}
             <div className="mt-8 flex gap-3">

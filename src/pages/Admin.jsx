@@ -85,18 +85,24 @@ function Modal({ open, onClose, title, children, maxW = '420px' }) {
   )
 }
 
-function ModalFooter({ onCancel, onConfirm, confirmLabel = 'Lưu', danger = false }) {
+function ModalFooter({ onCancel, onConfirm, confirmLabel = 'Lưu', danger = false, loading = false }) {
   return (
     <div className="flex justify-end gap-2 mt-5 pt-4" style={{ borderTop: `1px solid ${T.border}` }}>
-      <button onClick={onCancel}
-        className="rounded-xl border px-4 py-2 text-[13px] text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all"
+      <button onClick={onCancel} disabled={loading}
+        className="rounded-xl border px-4 py-2 text-[13px] text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all disabled:opacity-40"
         style={{ borderColor: T.border }}>
         Huỷ
       </button>
-      <button onClick={onConfirm}
-        className={`rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-all ${
+      <button onClick={onConfirm} disabled={loading}
+        className={`flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-all disabled:opacity-60 ${
           danger ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'
         }`}>
+        {loading && (
+          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+        )}
         {confirmLabel}
       </button>
     </div>
@@ -554,7 +560,7 @@ function UserManagement() {
               )}
             </div>
             <ModalFooter onCancel={()=>{ setModal(null); setFormError('') }} onConfirm={save}
-              confirmLabel={saving ? 'Đang lưu...' : modal==='add' ? 'Thêm & gửi email' : 'Lưu thay đổi'}/>
+              confirmLabel={modal==='add' ? 'Thêm & gửi email' : 'Lưu thay đổi'} loading={saving}/>
           </Modal>
         )}
       </AnimatePresence>
@@ -584,11 +590,14 @@ function ModuleManagement({ chapters, setChapters }) {
   const [actionId, setActionId] = useState(null)
   const [chForm, setChForm]   = useState({ title:'', description:'' })
   const [lForm, setLForm]     = useState({ title:'', duration:'', free:false, videoUrl:'', keyPoints:'', content:'', tags:'' })
+  const [savingCh, setSavingCh] = useState(false)
+  const [savingL, setSavingL]   = useState(false)
 
   const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
 
   const saveCh = async () => {
     if (!chForm.title) return
+    setSavingCh(true)
     try {
       if (chModal==='add') {
         const ch = await api.addChapter(chForm)
@@ -598,6 +607,7 @@ function ModuleManagement({ chapters, setChapters }) {
         setChapters(p=>p.map(c=>c.id===chModal.id?{...c,...ch}:c))
       }
     } catch {}
+    setSavingCh(false)
     setChModal(null)
   }
   const doDelCh = async id => {
@@ -608,6 +618,7 @@ function ModuleManagement({ chapters, setChapters }) {
   const saveL = async () => {
     if (!lForm.title) return
     const {mode, ch, l} = lModal
+    setSavingL(true)
     try {
       if (mode==='add') {
         const lesson = await api.addLesson(ch.id, lForm)
@@ -617,6 +628,7 @@ function ModuleManagement({ chapters, setChapters }) {
         setChapters(p=>p.map(c=>c.id===ch.id?{...c,lessons:c.lessons.map(x=>x.id===l.id?lesson:x)}:c))
       }
     } catch {}
+    setSavingL(false)
     setLModal(null)
   }
   const doDelL = async ({ch, l}) => {
@@ -771,7 +783,7 @@ function ModuleManagement({ chapters, setChapters }) {
                 <DarkInput value={chForm.description} onChange={e=>setChForm(p=>({...p,description:e.target.value}))} placeholder="Mô tả ngắn"/>
               </FormField>
             </div>
-            <ModalFooter onCancel={()=>setChModal(null)} onConfirm={saveCh} confirmLabel={chModal==='add'?'Thêm chương':'Lưu'}/>
+            <ModalFooter onCancel={()=>setChModal(null)} onConfirm={saveCh} confirmLabel={chModal==='add'?'Thêm chương':'Lưu'} loading={savingCh}/>
           </Modal>
         )}
       </AnimatePresence>
@@ -824,7 +836,7 @@ function ModuleManagement({ chapters, setChapters }) {
                 </div>
               </label>
             </div>
-            <ModalFooter onCancel={()=>setLModal(null)} onConfirm={saveL} confirmLabel={lModal.mode==='add'?'Thêm bài học':'Lưu'}/>
+            <ModalFooter onCancel={()=>setLModal(null)} onConfirm={saveL} confirmLabel={lModal.mode==='add'?'Thêm bài học':'Lưu'} loading={savingL}/>
           </Modal>
         )}
       </AnimatePresence>
