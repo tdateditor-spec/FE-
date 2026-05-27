@@ -8,30 +8,14 @@ import {
   ChevronRight,
   LogOut,
   Clock,
-  Bell,
   FileText,
   Star,
   GraduationCap,
   PlayCircle,
   ChevronLeft,
   User,
-  TrendingUp,
-  Camera,
-  Edit3,
-  Shield,
-  Target,
-  Flame,
-  Calendar,
-  Trophy,
   ShieldCheck,
   X,
-  Menu,
-  LayoutDashboard,
-  PlaySquare,
-  FileVideo,
-  Eye,
-  EyeOff,
-  KeyRound,
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -95,6 +79,45 @@ function fmtSecs(s) {
 }
 
 
+/* ─── Scroll passthrough wrapper for iframes ─────────────────────────────── */
+function VideoScrollWrapper({ children }) {
+  const [active, setActive] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!active) return;
+    const handler = (e) => {
+      if (!wrapRef.current?.contains(e.target)) setActive(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [active]);
+
+  return (
+    <div ref={wrapRef} className="relative w-full">
+      {children}
+      {!active && (
+        <div
+          className="absolute inset-0 z-20 cursor-pointer"
+          onWheel={(e) => {
+            e.preventDefault();
+            let el = e.currentTarget.parentElement;
+            while (el) {
+              const s = window.getComputedStyle(el);
+              if (/auto|scroll/.test(s.overflow + s.overflowY) && el.scrollHeight > el.clientHeight) {
+                el.scrollTop += e.deltaY;
+                return;
+              }
+              el = el.parentElement;
+            }
+          }}
+          onClick={() => setActive(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 /* ─── Video Player ────────────────────────────────────────────────────────── */
 function VideoPlayer({ lesson }) {
   const [playing, setPlaying] = useState(false);
@@ -132,24 +155,27 @@ function VideoPlayer({ lesson }) {
   // Google Drive: hiện iframe thẳng, không cần poster (Drive không hỗ trợ autoplay)
   if (isDrive && embedUrl) {
     return (
-      <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
-        <iframe
-          src={embedUrl}
-          className="absolute inset-0 w-full h-full"
-          frameBorder="0"
-          allow="autoplay"
-          allowFullScreen
-          title={lesson?.title}
-        />
-<div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
-          <Clock size={10} />
-          {displayDuration}
+      <VideoScrollWrapper>
+        <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
+          <iframe
+            src={embedUrl}
+            className="absolute inset-0 w-full h-full"
+            frameBorder="0"
+            allow="autoplay"
+            allowFullScreen
+            title={lesson?.title}
+          />
+          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
+            <Clock size={10} />
+            {displayDuration}
+          </div>
         </div>
-      </div>
+      </VideoScrollWrapper>
     );
   }
 
   return (
+    <VideoScrollWrapper>
     <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
 
       {/* Iframe pre-rendered cho YouTube/Vimeo */}
@@ -220,6 +246,7 @@ function VideoPlayer({ lesson }) {
         </>
       )}
     </div>
+    </VideoScrollWrapper>
   );
 }
 
@@ -319,31 +346,6 @@ function LessonThumb({ lesson, isActive, isDone, isLocked }) {
 }
 
 /* ─── Profile Modal ──────────────────────────────────────────────────────── */
-function PassInput({ label, value, onChange, placeholder }) {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-slate-400">{label}</label>
-      <div className="relative">
-        <input
-          type={show ? 'text' : 'password'}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none transition-all focus:border-blue-500/60 focus:bg-blue-500/[0.06]"
-        />
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={() => setShow((v) => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-        >
-          {show ? <EyeOff size={14} /> : <Eye size={14} />}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 /* ─── Dashboard ───────────────────────────────────────────────────────────── */
 export function Dashboard({ onLogout, onAdmin, onProfile }) {
@@ -488,7 +490,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
 
         {/* Chapter accordion */}
         <div className="flex-1 overflow-y-auto py-2">
-          {chapters.map((ch, ci) => (
+          {chapters.map((ch) => (
             <div key={ch.id}>
               {/* Chapter header */}
               <button
@@ -537,7 +539,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
                     transition={{ duration: 0.22 }}
                     className="overflow-hidden"
                   >
-                    {ch.lessons.map((lesson, li) => {
+                    {ch.lessons.map((lesson) => {
                       const isActive = activeLesson?.id === lesson.id;
                       const isDone = doneIds.has(lesson.id);
                       return (
@@ -801,12 +803,13 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
         </header>
 
         {/* Video player — ngoài vùng scroll để tránh iframe bắt scroll event */}
-        <div className="flex-shrink-0 w-full bg-black">
-          <VideoPlayer lesson={activeLesson} key={activeLesson?.id} />
-        </div>
-
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">
+          {/* Video player */}
+          <div className="w-full bg-black">
+            <VideoPlayer lesson={activeLesson} key={activeLesson?.id} />
+          </div>
+
           {/* Content area */}
           <div className="px-6 py-5 max-w-4xl">
             {/* Lesson title + mark done */}
