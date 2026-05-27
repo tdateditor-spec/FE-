@@ -32,14 +32,27 @@ function DarkCard({ children, className = '' }) {
   )
 }
 
-function DarkInput({ value, onChange, placeholder, type = 'text', className = '' }) {
+function DarkInput({ value, onChange, placeholder, type = 'text', className = '', error = false }) {
   return (
     <input
       type={type} value={value} onChange={onChange} placeholder={placeholder}
       className={`w-full rounded-xl border bg-white/[0.04] px-3 py-2 text-[13px] text-slate-200 placeholder:text-slate-600
-        outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all ${className}`}
-      style={{ borderColor: T.border }}
+        outline-none focus:ring-1 transition-all ${
+          error
+            ? 'border-red-500/60 focus:border-red-500/80 focus:ring-red-500/20'
+            : 'focus:border-blue-500/50 focus:ring-blue-500/20'
+        } ${className}`}
+      style={error ? {} : { borderColor: T.border }}
     />
+  )
+}
+
+function FieldError({ msg }) {
+  if (!msg) return null
+  return (
+    <p className="mt-1 text-[11px] text-red-400 flex items-center gap-1">
+      <span>⚠</span> {msg}
+    </p>
   )
 }
 
@@ -251,6 +264,7 @@ function UserManagement() {
   const [confirmDel, setDel]   = useState(null)
   const [saving, setSaving]    = useState(false)
   const [formError, setFormError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [toast, setToast]      = useState(null) // { type: 'success'|'error', msg }
   const [actionId, setActionId] = useState(null) // id đang xử lý (edit/delete/lock)
   const [form, setForm]        = useState({ name:'', email:'', phone:'', status:'active', paid:false })
@@ -281,11 +295,22 @@ function UserManagement() {
   const onStatusFilter = v => { setStatusFilter(v); load(1, search, v) }
   const goPage = p => load(p, search, statusFilter)
 
-  const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setFormError(''); setModal('add') }
-  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid }); setFormError(''); setModal(u) }
+  const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setFormError(''); setFieldErrors({}); setModal('add') }
+  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid }); setFormError(''); setFieldErrors({}); setModal(u) }
+
+  const validateUserForm = () => {
+    const errs = {}
+    if (!form.name.trim()) errs.name = 'Họ tên không được để trống'
+    if (!form.email.trim()) errs.email = 'Email không được để trống'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Email không đúng định dạng'
+    if (form.phone && !/^[0-9]{9,11}$/.test(form.phone.replace(/\s/g,''))) errs.phone = 'Số điện thoại không hợp lệ (9-11 chữ số)'
+    return errs
+  }
 
   const save = async () => {
-    if (!form.name || !form.email) { setFormError('Vui lòng nhập đầy đủ họ tên và email.'); return }
+    const errs = validateUserForm()
+    if (Object.keys(errs).length) { setFieldErrors(errs); return }
+    setFieldErrors({})
     setFormError('')
     setSaving(true)
     try {
@@ -514,13 +539,22 @@ function UserManagement() {
             title={modal === 'add' ? 'Thêm học viên' : 'Chỉnh sửa học viên'}>
             <div className="space-y-4">
               <FormField label="Họ tên *">
-                <DarkInput value={form.name} onChange={e=>{ setForm(p=>({...p,name:e.target.value})); setFormError('') }} placeholder="Nguyễn Văn A"/>
+                <DarkInput value={form.name} error={!!fieldErrors.name}
+                  onChange={e=>{ setForm(p=>({...p,name:e.target.value})); setFieldErrors(p=>({...p,name:''})) }}
+                  placeholder="Nguyễn Văn A"/>
+                <FieldError msg={fieldErrors.name}/>
               </FormField>
               <FormField label="Email *">
-                <DarkInput type="email" value={form.email} onChange={e=>{ setForm(p=>({...p,email:e.target.value})); setFormError('') }} placeholder="email@example.com"/>
+                <DarkInput type="email" value={form.email} error={!!fieldErrors.email}
+                  onChange={e=>{ setForm(p=>({...p,email:e.target.value})); setFieldErrors(p=>({...p,email:''})) }}
+                  placeholder="email@example.com"/>
+                <FieldError msg={fieldErrors.email}/>
               </FormField>
               <FormField label="Số điện thoại">
-                <DarkInput value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="09xx xxx xxx"/>
+                <DarkInput value={form.phone} error={!!fieldErrors.phone}
+                  onChange={e=>{ setForm(p=>({...p,phone:e.target.value})); setFieldErrors(p=>({...p,phone:''})) }}
+                  placeholder="09xx xxx xxx"/>
+                <FieldError msg={fieldErrors.phone}/>
               </FormField>
               <FormField label="Trạng thái">
                 <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))}
@@ -592,11 +626,16 @@ function ModuleManagement({ chapters, setChapters }) {
   const [lForm, setLForm]     = useState({ title:'', duration:'', free:false, videoUrl:'', keyPoints:'', content:'', tags:'' })
   const [savingCh, setSavingCh] = useState(false)
   const [savingL, setSavingL]   = useState(false)
+  const [chErrors, setChErrors] = useState({})
+  const [lErrors, setLErrors]   = useState({})
 
   const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
 
   const saveCh = async () => {
-    if (!chForm.title) return
+    const errs = {}
+    if (!chForm.title.trim()) errs.title = 'Tên chương không được để trống'
+    if (Object.keys(errs).length) { setChErrors(errs); return }
+    setChErrors({})
     setSavingCh(true)
     try {
       if (chModal==='add') {
@@ -616,7 +655,12 @@ function ModuleManagement({ chapters, setChapters }) {
     setChapters(p=>p.filter(c=>c.id!==id)); setDelCh(null); setActionId(null)
   }
   const saveL = async () => {
-    if (!lForm.title) return
+    const errs = {}
+    if (!lForm.title.trim()) errs.title = 'Tên bài học không được để trống'
+    if (lForm.duration && !/^\d+:\d{2}$/.test(lForm.duration)) errs.duration = 'Định dạng phải là MM:SS hoặc H:MM (VD: 15:30)'
+    if (lForm.videoUrl && !/^https?:\/\/.+/.test(lForm.videoUrl.trim())) errs.videoUrl = 'URL không hợp lệ, phải bắt đầu bằng https://'
+    if (Object.keys(errs).length) { setLErrors(errs); return }
+    setLErrors({})
     const {mode, ch, l} = lModal
     setSavingL(true)
     try {
@@ -773,17 +817,20 @@ function ModuleManagement({ chapters, setChapters }) {
       {/* Chapter modal */}
       <AnimatePresence>
         {chModal && (
-          <Modal open={!!chModal} onClose={()=>setChModal(null)}
+          <Modal open={!!chModal} onClose={()=>{ setChModal(null); setChErrors({}) }}
             title={chModal==='add' ? 'Thêm chương mới' : 'Chỉnh sửa chương'}>
             <div className="space-y-4">
               <FormField label="Tên chương *">
-                <DarkInput value={chForm.title} onChange={e=>setChForm(p=>({...p,title:e.target.value}))} placeholder="VD: Chapter 4: Advanced"/>
+                <DarkInput value={chForm.title} error={!!chErrors.title}
+                  onChange={e=>{ setChForm(p=>({...p,title:e.target.value})); setChErrors(p=>({...p,title:''})) }}
+                  placeholder="VD: Chapter 4: Advanced"/>
+                <FieldError msg={chErrors.title}/>
               </FormField>
               <FormField label="Mô tả">
                 <DarkInput value={chForm.description} onChange={e=>setChForm(p=>({...p,description:e.target.value}))} placeholder="Mô tả ngắn"/>
               </FormField>
             </div>
-            <ModalFooter onCancel={()=>setChModal(null)} onConfirm={saveCh} confirmLabel={chModal==='add'?'Thêm chương':'Lưu'} loading={savingCh}/>
+            <ModalFooter onCancel={()=>{ setChModal(null); setChErrors({}) }} onConfirm={saveCh} confirmLabel={chModal==='add'?'Thêm chương':'Lưu'} loading={savingCh}/>
           </Modal>
         )}
       </AnimatePresence>
@@ -791,18 +838,27 @@ function ModuleManagement({ chapters, setChapters }) {
       {/* Lesson modal */}
       <AnimatePresence>
         {lModal && (
-          <Modal open={!!lModal} onClose={()=>setLModal(null)}
+          <Modal open={!!lModal} onClose={()=>{ setLModal(null); setLErrors({}) }}
             title={lModal.mode==='add' ? 'Thêm bài học' : 'Chỉnh sửa bài học'}>
             <p className="text-[12px] text-slate-600 mb-4 -mt-2">Chương: <span className="text-blue-400">{lModal.ch.title}</span></p>
             <div className="space-y-4">
               <FormField label="Tên bài học *">
-                <DarkInput value={lForm.title} onChange={e=>setLForm(p=>({...p,title:e.target.value}))} placeholder="VD: Bài học về X"/>
+                <DarkInput value={lForm.title} error={!!lErrors.title}
+                  onChange={e=>{ setLForm(p=>({...p,title:e.target.value})); setLErrors(p=>({...p,title:''})) }}
+                  placeholder="VD: Bài học về X"/>
+                <FieldError msg={lErrors.title}/>
               </FormField>
               <FormField label="Thời lượng">
-                <DarkInput value={lForm.duration} onChange={e=>setLForm(p=>({...p,duration:e.target.value}))} placeholder="VD: 15:30"/>
+                <DarkInput value={lForm.duration} error={!!lErrors.duration}
+                  onChange={e=>{ setLForm(p=>({...p,duration:e.target.value})); setLErrors(p=>({...p,duration:''})) }}
+                  placeholder="VD: 15:30"/>
+                <FieldError msg={lErrors.duration}/>
               </FormField>
-              <FormField label="URL Video" hint={lForm.videoUrl ? '✓ Đã có URL video' : 'Hỗ trợ YouTube & Vimeo'}>
-                <DarkInput type="url" value={lForm.videoUrl} onChange={e=>setLForm(p=>({...p,videoUrl:e.target.value}))} placeholder="https://www.youtube.com/watch?v=..."/>
+              <FormField label="URL Video" hint={lForm.videoUrl && !lErrors.videoUrl ? '✓ Đã có URL video' : 'Hỗ trợ YouTube, Vimeo & Drive'}>
+                <DarkInput type="url" value={lForm.videoUrl} error={!!lErrors.videoUrl}
+                  onChange={e=>{ setLForm(p=>({...p,videoUrl:e.target.value})); setLErrors(p=>({...p,videoUrl:''})) }}
+                  placeholder="https://www.youtube.com/watch?v=..."/>
+                <FieldError msg={lErrors.videoUrl}/>
               </FormField>
               <FormField label="Điểm chính trong bài" hint="Mỗi dòng = 1 điểm">
                 <textarea
@@ -836,7 +892,7 @@ function ModuleManagement({ chapters, setChapters }) {
                 </div>
               </label>
             </div>
-            <ModalFooter onCancel={()=>setLModal(null)} onConfirm={saveL} confirmLabel={lModal.mode==='add'?'Thêm bài học':'Lưu'} loading={savingL}/>
+            <ModalFooter onCancel={()=>{ setLModal(null); setLErrors({}) }} onConfirm={saveL} confirmLabel={lModal.mode==='add'?'Thêm bài học':'Lưu'} loading={savingL}/>
           </Modal>
         )}
       </AnimatePresence>
