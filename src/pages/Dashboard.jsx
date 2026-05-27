@@ -368,11 +368,11 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
   });
   const avatarRef = useRef(null);
 
-  // Load chapters from API
+  // Load chapters + tiến độ từ API
   useEffect(() => {
-    api.getCourses()
-      .then((data) => {
-        const raw = data.chapters || [];
+    Promise.all([api.getCourses(), api.getProgress()])
+      .then(([courseData, progressData]) => {
+        const raw = courseData.chapters || [];
         const styled = raw.map((ch, ci) => ({
           ...ch,
           ...(chapterStyles[ci] || chapterStyles[chapterStyles.length - 1]),
@@ -381,10 +381,11 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
         const initialOpen = {};
         styled.forEach((ch) => { initialOpen[ch.id] = !ch.locked; });
         setOpenChapters(initialOpen);
+        const doneSet = new Set(progressData.done || []);
+        setDoneIds(doneSet);
         const allL = flattenLessons(styled);
-        setDoneIds(new Set(allL.filter((l) => l.done).map((l) => l.id)));
         const unlockedL = allL.filter((l) => !l.locked);
-        const first = unlockedL.find((l) => !l.done) || unlockedL[0];
+        const first = unlockedL.find((l) => !doneSet.has(l.id)) || unlockedL[0];
         if (first) setActiveLesson(first);
       })
       .catch(() => {})
@@ -419,6 +420,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
   };
   const markDone = () => {
     setDoneIds((prev) => new Set([...prev, activeLesson.id]));
+    api.markLessonDone(activeLesson.id).catch(() => {});
     if (nextLesson) selectLesson(nextLesson);
   };
 

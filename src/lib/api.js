@@ -59,6 +59,8 @@ export const api = {
 
   // Courses
   getCourses:    () => request('GET', '/api/courses'),
+  getProgress:    ()         => request('GET',  '/api/courses/progress'),
+  markLessonDone: (lessonId) => request('POST', `/api/courses/progress/${lessonId}`),
   addChapter:    (data) => request('POST', '/api/courses/chapters', data),
   updateChapter: (cid, data) => request('PUT', `/api/courses/chapters/${cid}`, data),
   deleteChapter: (cid) => request('DELETE', `/api/courses/chapters/${cid}`),
