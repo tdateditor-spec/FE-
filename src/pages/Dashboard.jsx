@@ -15,15 +15,29 @@ import {
   ChevronLeft,
   User,
   ShieldCheck,
-  X,
 } from 'lucide-react';
 import { api } from '../lib/api';
 
 /* ─── Chapter styles (visual only, merged with API data) ──────────────────── */
 const chapterStyles = [
-  { color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/25', dot: 'bg-violet-500' },
-  { color: 'text-blue-400',   bg: 'bg-blue-500/10',   border: 'border-blue-500/25',   dot: 'bg-blue-500'   },
-  { color: 'text-emerald-400',bg: 'bg-emerald-500/10',border: 'border-emerald-500/25',dot: 'bg-emerald-500' },
+  {
+    color: 'text-violet-400',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/25',
+    dot: 'bg-violet-500',
+  },
+  {
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/25',
+    dot: 'bg-blue-500',
+  },
+  {
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/25',
+    dot: 'bg-emerald-500',
+  },
 ];
 
 function flattenLessons(chapters) {
@@ -31,14 +45,15 @@ function flattenLessons(chapters) {
     c.lessons.map((l, li) => ({
       ...l,
       chapterId: c.id,
-      num: chapters.slice(0, ci).reduce((s, x) => s + x.lessons.length, 0) + li + 1,
+      num:
+        chapters.slice(0, ci).reduce((s, x) => s + x.lessons.length, 0) +
+        li +
+        1,
     }))
   );
 }
 
-
 /* ─── Video helpers ───────────────────────────────────────────────────────── */
-
 
 function getThumbUrl(videoUrl) {
   if (!videoUrl) return null;
@@ -58,77 +73,47 @@ function getEmbedUrl(url) {
   if (long)
     return `https://www.youtube.com/embed/${long[1]}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
   if (url.includes('youtube.com/embed/'))
-    return url.includes('autoplay') ? url : url + '?autoplay=1&rel=0&enablejsapi=1';
+    return url.includes('autoplay')
+      ? url
+      : url + '?autoplay=1&rel=0&enablejsapi=1';
   const vimeo = url.match(/vimeo\.com\/(\d+)/);
   if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1`;
   const driveFile = url.match(/drive\.google\.com\/file\/d\/([^/?&\s]+)/);
-  if (driveFile) return `https://drive.google.com/file/d/${driveFile[1]}/preview?rm=minimal`;
+  if (driveFile)
+    return `https://drive.google.com/file/d/${driveFile[1]}/preview?rm=minimal`;
   const driveOpen = url.match(/drive\.google\.com\/open\?id=([^&\s]+)/);
-  if (driveOpen) return `https://drive.google.com/file/d/${driveOpen[1]}/preview?rm=minimal`;
+  if (driveOpen)
+    return `https://drive.google.com/file/d/${driveOpen[1]}/preview?rm=minimal`;
   if (url.includes('drive.google.com/file/d/') && url.includes('/preview'))
     return url.includes('rm=minimal') ? url : url + '?rm=minimal';
   return null;
 }
 
-function fmtSecs(s) {
-  if (!s || s <= 0) return null;
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = Math.floor(s % 60);
-  return h > 0
-    ? `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
-    : `${m}:${String(ss).padStart(2,'0')}`;
-}
-
 
 /* ─── Video Player ────────────────────────────────────────────────────────── */
-function VideoPlayer({ lesson }) {
+function VideoPlayer({ lesson, displayDuration }) {
   const [playing, setPlaying] = useState(false);
-  const [realDuration, setRealDuration] = useState(null);
   const iframeRef = useRef(null);
   const embedUrl = getEmbedUrl(lesson?.videoUrl);
+  const thumb = getThumbUrl(lesson?.videoUrl);
   const isDrive = embedUrl?.includes('drive.google.com');
-  const displayDuration = realDuration ? fmtSecs(realDuration) : (lesson?.duration ?? '—');
-
-  // Lấy duration thực từ YouTube qua postMessage
-  useEffect(() => {
-    if (!playing || !embedUrl?.includes('youtube.com')) return;
-    const handler = (e) => {
-      if (!String(e.origin).includes('youtube.com')) return;
-      try {
-        const d = JSON.parse(e.data);
-        if (d.event === 'infoDelivery' && d.info?.duration > 0)
-          setRealDuration(d.info.duration);
-      } catch { return; }
-    };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, [playing, embedUrl]);
 
   const handlePlay = () => {
     if (iframeRef.current && embedUrl) iframeRef.current.src = embedUrl;
     setPlaying(true);
   };
 
-  const handleStop = () => {
-    if (iframeRef.current) iframeRef.current.src = '';
-    setPlaying(false);
-  };
-
-  // Google Drive: hiện iframe thẳng, không cần poster (Drive không hỗ trợ autoplay)
+  // Google Drive: hiện iframe thẳng
   if (isDrive && embedUrl) {
     return (
       <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
-        <iframe
-          src={embedUrl}
-          className="absolute inset-0 w-full h-full"
-          frameBorder="0"
-          allow="autoplay"
-          allowFullScreen
-          title={lesson?.title}
-        />
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
-          <Clock size={10} />
-          {displayDuration}
-        </div>
+        <iframe src={embedUrl} className="absolute inset-0 w-full h-full"
+          frameBorder="0" allow="autoplay" allowFullScreen title={lesson?.title} />
+        {displayDuration && (
+          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
+            <Clock size={10} />{displayDuration}
+          </div>
+        )}
       </div>
     );
   }
@@ -136,7 +121,7 @@ function VideoPlayer({ lesson }) {
   return (
     <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
 
-      {/* Iframe pre-rendered cho YouTube/Vimeo */}
+      {/* Iframe — chiếm toàn bộ khi playing, không có overlay/controls */}
       {embedUrl && (
         <iframe
           ref={iframeRef}
@@ -150,58 +135,43 @@ function VideoPlayer({ lesson }) {
         />
       )}
 
-      {playing && (
-        <button
-          onClick={handleStop}
-          className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-xl bg-black/60 text-white hover:bg-black/80 transition-all z-10"
-        >
-          <X size={14} />
-        </button>
-      )}
-
+      {/* Poster — ẩn ngay khi playing */}
       {!playing && (
-        <>
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a1a] via-[#0d1226] to-[#0a0a1a]">
-            <div
-              className="absolute inset-0 opacity-[0.06]"
-              style={{
-                backgroundImage: 'radial-gradient(circle, #60a5fa 1px, transparent 1px)',
-                backgroundSize: '28px 28px',
-              }}
-            />
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center px-8">
-              {embedUrl ? (
-                <p className="text-blue-400 text-[10px] uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5">
-                  <PlayCircle size={11} /> Video thực hành
-                </p>
-              ) : (
-                <p className="text-slate-500 text-[10px] uppercase tracking-widest mb-2">Bài học</p>
-              )}
-              <p className="text-white text-base font-semibold leading-snug max-w-md">{lesson?.title}</p>
-              {!embedUrl && (
-                <p className="mt-2 text-[11px] text-slate-600">Chưa có video — Thêm URL trong trang Admin</p>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={handlePlay}
-            className="absolute inset-0 flex items-center justify-center group"
-          >
+        <button onClick={handlePlay} className="absolute inset-0 group" style={{ display: 'block' }}>
+          {/* YouTube thumbnail làm nền */}
+          {thumb ? (
+            <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a1a] via-[#0d1226] to-[#0a0a1a]" />
+          )}
+          {/* Overlay tối nhẹ */}
+          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors" />
+
+          {/* Play button */}
+          <div className="absolute inset-0 flex items-center justify-center">
             <motion.div
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 border border-white/20 group-hover:bg-white/20 backdrop-blur-sm shadow-lg transition-all"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.93 }}
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 border-2 border-white/50 group-hover:bg-white/30 backdrop-blur-sm shadow-2xl transition-all"
             >
-              <Play size={22} className="text-white ml-1" fill="white" />
+              <Play size={26} className="text-white ml-1" fill="white" />
             </motion.div>
-          </button>
-          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
-            <Clock size={10} />
-            {displayDuration}
           </div>
-        </>
+
+          {/* Duration badge */}
+          {displayDuration && (
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-black/70 px-2.5 py-1 text-[11px] text-white font-medium pointer-events-none">
+              <Clock size={10} />{displayDuration}
+            </div>
+          )}
+
+          {/* Tiêu đề nếu không có thumbnail */}
+          {!thumb && !embedUrl && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <p className="text-white text-base font-semibold px-8 text-center">{lesson?.title}</p>
+            </div>
+          )}
+        </button>
       )}
     </div>
   );
@@ -210,7 +180,10 @@ function VideoPlayer({ lesson }) {
 /* ─── Tab: Content ────────────────────────────────────────────────────────── */
 function TabContent({ lesson }) {
   const points = (lesson?.keyPoints || '').split('\n').filter(Boolean);
-  const tags   = (lesson?.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+  const tags = (lesson?.tags || '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
 
   return (
     <div className="space-y-6">
@@ -229,9 +202,13 @@ function TabContent({ lesson }) {
                 className="flex items-start gap-3"
               >
                 <div className="flex-shrink-0 h-5 w-5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mt-0.5">
-                  <span className="text-[9px] font-bold text-primary">{i + 1}</span>
+                  <span className="text-[9px] font-bold text-primary">
+                    {i + 1}
+                  </span>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{pt}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {pt}
+                </p>
               </motion.li>
             ))}
           </ul>
@@ -240,7 +217,8 @@ function TabContent({ lesson }) {
       {lesson?.content && (
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <FileText size={13} className="text-muted-foreground" /> Nội dung bài giảng
+            <FileText size={13} className="text-muted-foreground" /> Nội dung
+            bài giảng
           </h3>
           <div className="rounded-xl border bg-muted/40 p-4">
             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
@@ -251,22 +229,26 @@ function TabContent({ lesson }) {
       )}
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {tags.map(t => (
-            <span key={t} className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          {tags.map((t) => (
+            <span
+              key={t}
+              className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+            >
               {t}
             </span>
           ))}
         </div>
       )}
       {points.length === 0 && !lesson?.content && tags.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-8">Chưa có nội dung. Admin có thể thêm tại trang quản lý.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">
+          Chưa có nội dung. Admin có thể thêm tại trang quản lý.
+        </p>
       )}
     </div>
   );
 }
 
 /* ─── Tab: Notes ──────────────────────────────────────────────────────────── */
-
 
 /* ─── Lesson Thumbnail ────────────────────────────────────────────────────── */
 function LessonThumb({ lesson, isActive, isDone, isLocked }) {
@@ -319,17 +301,23 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
       const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(
         decodeURIComponent(
-          atob(base64).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
         )
       );
       return { name: payload.name, email: payload.email, role: payload.role };
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   });
   const avatarRef = useRef(null);
 
   // Load chapters + tiến độ từ API
   useEffect(() => {
-    api.getCourses()
+    api
+      .getCourses()
       .then((courseData) => {
         const raw = courseData.chapters || [];
         const styled = raw.map((ch, ci) => ({
@@ -338,16 +326,20 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
         }));
         setChapters(styled);
         const initialOpen = {};
-        styled.forEach((ch) => { initialOpen[ch.id] = !ch.locked; });
+        styled.forEach((ch) => {
+          initialOpen[ch.id] = !ch.locked;
+        });
         setOpenChapters(initialOpen);
 
-        api.getProgress()
+        api
+          .getProgress()
           .then(({ done }) => {
             const doneSet = new Set(done || []);
             setDoneIds(doneSet);
             const allL = flattenLessons(styled);
             const unlockedL = allL.filter((l) => !l.locked);
-            const first = unlockedL.find((l) => !doneSet.has(l.id)) || unlockedL[0];
+            const first =
+              unlockedL.find((l) => !doneSet.has(l.id)) || unlockedL[0];
             if (first) setActiveLesson(first);
           })
           .catch(() => {
@@ -371,6 +363,9 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
 
   const allLessons = flattenLessons(chapters);
   const unlocked = allLessons.filter((l) => !l.locked);
+
+  const getDuration = (lesson) => lesson?.duration || null;
+  const lessonDuration = getDuration(activeLesson);
 
   const done = doneIds.size;
   const total = allLessons.length;
@@ -539,7 +534,8 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
                             </p>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="flex items-center gap-1 text-[10px] text-slate-600">
-                                <Clock size={9} /> {lesson.duration}
+                                <Clock size={9} />{' '}
+                                {getDuration(lesson) || '—'}
                               </span>
                               {isDone && (
                                 <span className="flex items-center gap-0.5 text-[10px] text-emerald-500">
@@ -764,7 +760,11 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
         <div className="flex-1 overflow-y-auto">
           {/* Video player */}
           <div className="w-full bg-black">
-            <VideoPlayer lesson={activeLesson} key={activeLesson?.id} />
+            <VideoPlayer
+              lesson={activeLesson}
+              key={activeLesson?.id}
+              displayDuration={lessonDuration}
+            />
           </div>
 
           {/* Content area */}
@@ -784,7 +784,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
                 </h1>
                 <p className="flex items-center gap-3 mt-1 text-[12px] text-slate-500">
                   <span className="flex items-center gap-1">
-                    <Clock size={10} /> {activeLesson?.duration}
+                    <Clock size={10} /> {lessonDuration}
                   </span>
                   {doneIds.has(activeLesson?.id) && (
                     <span className="flex items-center gap-1 text-emerald-500">

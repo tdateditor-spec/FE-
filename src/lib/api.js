@@ -58,7 +58,8 @@ export const api = {
   resetPassword:  (token, newPassword)       => request('POST', '/api/auth/reset-password', { token, newPassword }),
 
   // Courses
-  getCourses:    () => request('GET', '/api/courses'),
+  getCourses:       () => request('GET', '/api/courses'),
+  getVideoMeta:     (url) => request('GET', `/api/courses/video-metadata?url=${encodeURIComponent(url)}`),
   getProgress:    ()         => request('GET',  '/api/courses/progress'),
   markLessonDone: (lessonId) => request('POST', `/api/courses/progress/${lessonId}`),
   addChapter:    (data) => request('POST', '/api/courses/chapters', data),

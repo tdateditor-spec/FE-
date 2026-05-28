@@ -628,6 +628,67 @@ function ModuleManagement({ chapters, setChapters }) {
   const [savingL, setSavingL]   = useState(false)
   const [chErrors, setChErrors] = useState({})
   const [lErrors, setLErrors]   = useState({})
+  const [fetchingMeta, setFetchingMeta] = useState(false)
+  const [metaPreview, setMetaPreview]   = useState(null) // { title, duration, thumbnail }
+
+  // Auto-detect YouTube metadata qua IFrame API (client-side, không bị chặn)
+  useEffect(() => {
+    const url = lForm.videoUrl?.trim()
+    if (!url) { setMetaPreview(null); return }
+    const videoId = (url.match(/(?:youtu\.be\/|[?&]v=)([^&\s]+)/) || [])[1]
+    if (!videoId) { setMetaPreview(null); return }
+
+    setFetchingMeta(true)
+    const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    const elId = `admin-yt-${videoId}`
+    const el = document.createElement('div')
+    el.id = elId
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;'
+    document.body.appendChild(el)
+    let player
+
+    const secsToStr = (n) => {
+      const m = Math.floor(n / 60), s = Math.floor(n % 60)
+      return `${m}:${String(s).padStart(2,'0')}`
+    }
+
+    const init = () => {
+      player = new window.YT.Player(elId, {
+        videoId, width: 1, height: 1,
+        playerVars: { autoplay: 0, mute: 1 },
+        events: {
+          onReady(e) {
+            const secs = e.target.getDuration()
+            const dur = secs > 0 ? secsToStr(secs) : null
+            const title = e.target.getVideoData?.()?.title || ''
+            if (dur) {
+              setMetaPreview({ thumbnail, duration: dur, title, videoId })
+              setLForm(p => ({ ...p, duration: dur }))
+            }
+            setFetchingMeta(false)
+            try { e.target.destroy() } finally { el.remove() }
+          },
+        },
+      })
+    }
+
+    if (window.YT?.Player) {
+      init()
+    } else {
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const s = document.createElement('script')
+        s.src = 'https://www.youtube.com/iframe_api'
+        s.async = true
+        document.head.appendChild(s)
+      }
+      const prev = window.onYouTubeIframeAPIReady
+      window.onYouTubeIframeAPIReady = () => { prev?.(); init() }
+    }
+
+    return () => {
+      try { player?.destroy() } finally { document.getElementById(elId)?.remove() }
+    }
+  }, [lForm.videoUrl])
 
   const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
 
@@ -848,17 +909,31 @@ function ModuleManagement({ chapters, setChapters }) {
                   placeholder="VD: Bài học về X"/>
                 <FieldError msg={lErrors.title}/>
               </FormField>
-              <FormField label="Thời lượng">
-                <DarkInput value={lForm.duration} error={!!lErrors.duration}
-                  onChange={e=>{ setLForm(p=>({...p,duration:e.target.value})); setLErrors(p=>({...p,duration:''})) }}
-                  placeholder="VD: 15:30"/>
+              <FormField label="Thời lượng" hint={fetchingMeta ? '⏳ Đang tự động phát hiện...' : ''}>
+                <div className="relative">
+                  <DarkInput value={fetchingMeta ? '' : lForm.duration} error={!!lErrors.duration}
+                    onChange={e=>{ setLForm(p=>({...p,duration:e.target.value})); setLErrors(p=>({...p,duration:''})) }}
+                    placeholder={fetchingMeta ? 'Đang phát hiện thời lượng...' : 'VD: 15:30'}
+                    className={fetchingMeta ? 'opacity-60 cursor-wait' : ''}/>
+                </div>
                 <FieldError msg={lErrors.duration}/>
               </FormField>
-              <FormField label="URL Video" hint={lForm.videoUrl && !lErrors.videoUrl ? '✓ Đã có URL video' : 'Hỗ trợ YouTube, Vimeo & Drive'}>
+              <FormField label="URL Video" hint={fetchingMeta ? '⏳ Đang lấy thông tin video...' : lForm.videoUrl && !lErrors.videoUrl ? '✓ Đã có URL video' : 'Hỗ trợ YouTube, Vimeo & Drive'}>
                 <DarkInput type="url" value={lForm.videoUrl} error={!!lErrors.videoUrl}
-                  onChange={e=>{ setLForm(p=>({...p,videoUrl:e.target.value})); setLErrors(p=>({...p,videoUrl:''})) }}
+                  onChange={e=>{ setLForm(p=>({...p,videoUrl:e.target.value})); setLErrors(p=>({...p,videoUrl:''})); setMetaPreview(null) }}
                   placeholder="https://www.youtube.com/watch?v=..."/>
                 <FieldError msg={lErrors.videoUrl}/>
+                {metaPreview && (
+                  <div className="mt-2 flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/[0.06] p-2.5">
+                    {metaPreview.thumbnail && (
+                      <img src={metaPreview.thumbnail} alt="" className="h-12 w-20 rounded-lg object-cover flex-shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-medium text-white truncate">{metaPreview.title}</p>
+                      <p className="text-[11px] text-blue-400 mt-0.5">⏱ {metaPreview.duration}</p>
+                    </div>
+                  </div>
+                )}
               </FormField>
               <FormField label="Điểm chính trong bài" hint="Mỗi dòng = 1 điểm">
                 <textarea
@@ -892,7 +967,7 @@ function ModuleManagement({ chapters, setChapters }) {
                 </div>
               </label>
             </div>
-            <ModalFooter onCancel={()=>{ setLModal(null); setLErrors({}) }} onConfirm={saveL} confirmLabel={lModal.mode==='add'?'Thêm bài học':'Lưu'} loading={savingL}/>
+            <ModalFooter onCancel={()=>{ setLModal(null); setLErrors({}) }} onConfirm={saveL} confirmLabel={fetchingMeta ? '⏳ Đang phát hiện...' : lModal.mode==='add'?'Thêm bài học':'Lưu'} loading={savingL || fetchingMeta}/>
           </Modal>
         )}
       </AnimatePresence>
