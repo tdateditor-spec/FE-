@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { api } from '../lib/api'
 import {
@@ -71,7 +72,7 @@ function DarkBadge({ children, color = 'slate' }) {
   )
 }
 
-/* Modal overlay */
+/* Modal overlay — dùng createPortal để tránh stacking context issues */
 function Modal({ open, onClose, title, children, maxW = '420px' }) {
   useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose() }
@@ -80,9 +81,9 @@ function Modal({ open, onClose, title, children, maxW = '420px' }) {
   }, [open, onClose])
 
   if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+  return createPortal(
+    <div className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.85)', zIndex: 9999 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ opacity:0, scale:0.96, y:8 }} animate={{ opacity:1, scale:1, y:0 }}
         exit={{ opacity:0, scale:0.96 }} transition={{ duration: 0.18 }}
@@ -94,7 +95,8 @@ function Modal({ open, onClose, title, children, maxW = '420px' }) {
         </div>
         {children}
       </motion.div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -634,42 +636,51 @@ function ModuleManagement({ chapters, setChapters }) {
   // Auto-detect YouTube metadata qua IFrame API (client-side, không bị chặn)
   useEffect(() => {
     const url = lForm.videoUrl?.trim()
-    if (!url) { setMetaPreview(null); return }
+    if (!url) { setMetaPreview(null); setFetchingMeta(false); return }
     const videoId = (url.match(/(?:youtu\.be\/|[?&]v=)([^&\s]+)/) || [])[1]
-    if (!videoId) { setMetaPreview(null); return }
+    if (!videoId) { setMetaPreview(null); setFetchingMeta(false); return }
 
     setFetchingMeta(true)
+    let cancelled = false  // guard tránh setState sau cleanup
     const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-    const elId = `admin-yt-${videoId}`
+    const elId = `admin-yt-${videoId}-${Date.now()}`
     const el = document.createElement('div')
     el.id = elId
     el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;'
     document.body.appendChild(el)
     let player
 
-    const secsToStr = (n) => {
-      const m = Math.floor(n / 60), s = Math.floor(n % 60)
-      return `${m}:${String(s).padStart(2,'0')}`
-    }
+    const fmt = (n) => `${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`
 
     const init = () => {
-      player = new window.YT.Player(elId, {
-        videoId, width: 1, height: 1,
-        playerVars: { autoplay: 0, mute: 1 },
-        events: {
-          onReady(e) {
-            const secs = e.target.getDuration()
-            const dur = secs > 0 ? secsToStr(secs) : null
-            const title = e.target.getVideoData?.()?.title || ''
-            if (dur) {
-              setMetaPreview({ thumbnail, duration: dur, title, videoId })
-              setLForm(p => ({ ...p, duration: dur }))
-            }
-            setFetchingMeta(false)
-            try { e.target.destroy() } finally { el.remove() }
+      if (cancelled) { el.remove(); return }
+      try {
+        player = new window.YT.Player(elId, {
+          videoId, width: 1, height: 1,
+          playerVars: { autoplay: 0, mute: 1 },
+          events: {
+            onReady(e) {
+              const cleanup = () => { try { e.target.destroy() } catch (ex) { void ex; } el.remove() }
+              if (cancelled) { cleanup(); return }
+              let dur = null
+              try {
+                const secs = e.target.getDuration()
+                dur = secs > 0 ? fmt(secs) : null
+                if (dur && !cancelled) {
+                  setMetaPreview({ thumbnail, duration: dur, title: e.target.getVideoData?.()?.title || '', videoId })
+                  setLForm(p => ({ ...p, duration: dur }))
+                }
+              } catch (ex) { void ex; }
+              if (!cancelled) setFetchingMeta(false)
+              cleanup()
+            },
           },
-        },
-      })
+        })
+      } catch (ex) {
+        void ex
+        el.remove()
+        if (!cancelled) setFetchingMeta(false)
+      }
     }
 
     if (window.YT?.Player) {
@@ -686,7 +697,10 @@ function ModuleManagement({ chapters, setChapters }) {
     }
 
     return () => {
-      try { player?.destroy() } finally { document.getElementById(elId)?.remove() }
+      cancelled = true
+      setFetchingMeta(false)
+      try { player?.destroy() } catch (ex) { void ex; }
+      document.getElementById(elId)?.remove()
     }
   }, [lForm.videoUrl])
 
