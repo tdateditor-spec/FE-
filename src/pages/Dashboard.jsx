@@ -91,9 +91,10 @@ function getEmbedUrl(url) {
 
 
 /* ─── Video Player ────────────────────────────────────────────────────────── */
-function VideoPlayer({ lesson, displayDuration }) {
+function VideoPlayer({ lesson, displayDuration, scrollRef }) {
   const [playing, setPlaying] = useState(false);
   const iframeRef = useRef(null);
+  const overlayRef = useRef(null);
   const embedUrl = getEmbedUrl(lesson?.videoUrl);
   const thumb = getThumbUrl(lesson?.videoUrl);
   const isDrive = embedUrl?.includes('drive.google.com');
@@ -101,6 +102,19 @@ function VideoPlayer({ lesson, displayDuration }) {
   const handlePlay = () => {
     if (iframeRef.current && embedUrl) iframeRef.current.src = embedUrl;
     setPlaying(true);
+  };
+
+  // Khi đang play, overlay trong suốt nằm trên iframe để bắt wheel event
+  // rồi forward lên scroll container — tránh iframe YouTube nuốt scroll
+  const handleOverlayWheel = (e) => {
+    if (scrollRef?.current) scrollRef.current.scrollTop += e.deltaY;
+  };
+  // mousedown → ẩn overlay để click xuyên qua iframe; mouseup → hiện lại
+  const handleOverlayMouseDown = () => {
+    if (overlayRef.current) overlayRef.current.style.pointerEvents = 'none';
+  };
+  const handleOverlayMouseUp = () => {
+    if (overlayRef.current) overlayRef.current.style.pointerEvents = 'auto';
   };
 
   // Google Drive: hiện iframe thẳng
@@ -121,7 +135,7 @@ function VideoPlayer({ lesson, displayDuration }) {
   return (
     <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
 
-      {/* Iframe — chiếm toàn bộ khi playing, không có overlay/controls */}
+      {/* Iframe */}
       {embedUrl && (
         <iframe
           ref={iframeRef}
@@ -135,19 +149,28 @@ function VideoPlayer({ lesson, displayDuration }) {
         />
       )}
 
+      {/* Overlay trong suốt khi đang play — bắt scroll, nhường click cho iframe */}
+      {playing && (
+        <div
+          ref={overlayRef}
+          className="absolute inset-0"
+          style={{ zIndex: 10, pointerEvents: 'auto', cursor: 'default' }}
+          onWheel={handleOverlayWheel}
+          onMouseDown={handleOverlayMouseDown}
+          onMouseUp={handleOverlayMouseUp}
+        />
+      )}
+
       {/* Poster — ẩn ngay khi playing */}
       {!playing && (
         <button onClick={handlePlay} className="absolute inset-0 group" style={{ display: 'block' }}>
-          {/* YouTube thumbnail làm nền */}
           {thumb ? (
             <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a1a] via-[#0d1226] to-[#0a0a1a]" />
           )}
-          {/* Overlay tối nhẹ */}
           <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors" />
 
-          {/* Play button */}
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.div
               whileHover={{ scale: 1.1 }}
@@ -158,14 +181,12 @@ function VideoPlayer({ lesson, displayDuration }) {
             </motion.div>
           </div>
 
-          {/* Duration badge */}
           {displayDuration && (
             <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-black/70 px-2.5 py-1 text-[11px] text-white font-medium pointer-events-none">
               <Clock size={10} />{displayDuration}
             </div>
           )}
 
-          {/* Tiêu đề nếu không có thumbnail */}
           {!thumb && !embedUrl && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <p className="text-white text-base font-semibold px-8 text-center">{lesson?.title}</p>
@@ -313,6 +334,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
     }
   });
   const avatarRef = useRef(null);
+  const mainScrollRef = useRef(null);
 
   // Load chapters + tiến độ từ API
   useEffect(() => {
@@ -755,17 +777,17 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
           </div>
         </header>
 
-        {/* Video player — ngoài vùng scroll để iframe không bắt scroll event */}
-        <div className="flex-shrink-0 w-full bg-black">
-          <VideoPlayer
-            lesson={activeLesson}
-            key={activeLesson?.id}
-            displayDuration={lessonDuration}
-          />
-        </div>
+        {/* Scrollable body — video nằm trong cùng scroll container */}
+        <div className="flex-1 overflow-y-auto" ref={mainScrollRef}>
+          <div className="w-full bg-black">
+            <VideoPlayer
+              lesson={activeLesson}
+              key={activeLesson?.id}
+              displayDuration={lessonDuration}
+              scrollRef={mainScrollRef}
+            />
+          </div>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto">
           {/* Content area */}
           <div className="px-6 py-5 max-w-4xl">
             {/* Lesson title + mark done */}
