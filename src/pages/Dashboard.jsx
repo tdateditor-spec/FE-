@@ -755,18 +755,17 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
           </div>
         </header>
 
-        {/* Video player — ngoài vùng scroll để tránh iframe bắt scroll event */}
+        {/* Video player — ngoài vùng scroll để iframe không bắt scroll event */}
+        <div className="flex-shrink-0 w-full bg-black">
+          <VideoPlayer
+            lesson={activeLesson}
+            key={activeLesson?.id}
+            displayDuration={lessonDuration}
+          />
+        </div>
+
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">
-          {/* Video player */}
-          <div className="w-full bg-black">
-            <VideoPlayer
-              lesson={activeLesson}
-              key={activeLesson?.id}
-              displayDuration={lessonDuration}
-            />
-          </div>
-
           {/* Content area */}
           <div className="px-6 py-5 max-w-4xl">
             {/* Lesson title + mark done */}
