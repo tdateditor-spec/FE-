@@ -132,12 +132,13 @@ export function PaymentModal({ open, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-3 bg-black/80 backdrop-blur-md"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className={cn(
-        'relative w-full rounded-3xl border border-white/10 bg-[#111318] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 flex flex-col',
-        step === 'checkout' ? 'max-w-[900px] max-h-[95vh]' : 'max-w-[420px]'
+        'relative w-full border border-white/10 bg-[#111318] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 flex flex-col',
+        'rounded-t-3xl sm:rounded-3xl',
+        step === 'checkout' ? 'max-w-[900px] h-[92svh] sm:h-auto sm:max-h-[95vh]' : 'max-w-[420px]'
       )}>
         <button
           onClick={onClose}
@@ -187,10 +188,92 @@ export function PaymentModal({ open, onClose }) {
         {step === 'checkout' && (
           <div className="flex flex-col md:flex-row flex-1 min-h-0">
 
+            {/* ── Cột phải (QR) — hiện đầu tiên trên mobile ── */}
+            <div className="w-full md:w-[290px] flex-shrink-0 min-h-0 overflow-y-auto p-5 flex flex-col bg-[#0d1018] border-b md:border-b-0 md:border-r border-white/[0.07] order-first md:order-last">
+              <h3 className="font-heading font-bold text-white text-center mb-3 text-sm">Quét QR để thanh toán</h3>
+
+              {/* QR */}
+              <div className="flex justify-center mb-3">
+                <div className="rounded-2xl bg-white p-3 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                  <img
+                    className="h-[150px] w-[150px] rounded-xl"
+                    src={qrUrl}
+                    alt="VietQR"
+                    onError={(e) => {
+                      e.target.parentElement.innerHTML = '<div class="h-[150px] w-[150px] flex flex-col items-center justify-center bg-slate-800 rounded-xl text-slate-400 text-xs text-center p-4"><div class="text-3xl mb-2">📱</div>QR thanh toán</div>'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Bank info */}
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 mb-3 space-y-2 text-xs">
+                {[
+                  { label: 'Ngân hàng',     value: 'MB Bank',      key: null },
+                  { label: 'Số tài khoản',  value: '0368683148',   key: 'stk' },
+                  { label: 'Chủ tài khoản', value: 'LE THANH DAT', key: null },
+                  { label: 'Số tiền',       value: fmtVND(totalAmount), key: null, highlight: true },
+                  { label: 'Nội dung CK',   value: noiDung,        key: 'nd' },
+                ].map(({ label, value, key, highlight }) => (
+                  <div key={label} className="flex items-center justify-between gap-2">
+                    <span className="text-slate-500 flex-shrink-0">{label}</span>
+                    {key ? (
+                      <button onClick={() => copy(value, key)}
+                        className={cn('rounded border px-2 py-0.5 font-mono transition-all',
+                          copied === key
+                            ? 'border-green-500/30 bg-green-500/15 text-green-300'
+                            : 'border-slate-700 bg-slate-800 text-white hover:border-blue-500/40')}>
+                        {copied === key ? '✓ Copied!' : `${value} ⧉`}
+                      </button>
+                    ) : (
+                      <span className={cn('font-semibold text-right', highlight ? 'text-blue-400' : 'text-white')}>{value}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Đang chờ */}
+              <div className="rounded-xl border border-green-700/30 bg-green-900/20 px-3 py-2.5 text-center mb-3">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"/>
+                  <p className="text-xs font-semibold text-green-300">Đang chờ thanh toán...</p>
+                </div>
+              </div>
+
+              {/* Tổng */}
+              <div className="mt-auto space-y-2 border-t border-white/[0.07] pt-3 text-sm">
+                <div className="flex justify-between text-slate-400">
+                  <span>Sản phẩm chính</span>
+                  <span>{fmtVND(799000)}</span>
+                </div>
+                {addOns.music && (
+                  <div className="flex justify-between text-slate-400">
+                    <span>Sound Design</span>
+                    <span>{fmtVND(299000)}</span>
+                  </div>
+                )}
+                {addOns.plugin && (
+                  <div className="flex justify-between text-slate-400">
+                    <span>Plugin</span>
+                    <span>{fmtVND(499000)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-heading font-bold text-base border-t border-white/[0.07] pt-2 mt-2">
+                  <span className="text-white">Tổng thanh toán</span>
+                  <span className="text-blue-400">{fmtVND(totalAmount)}</span>
+                </div>
+              </div>
+
+              <button onClick={() => setStep('form')}
+                className="mt-4 w-full text-xs text-slate-600 hover:text-slate-400 transition-colors">
+                ← Sửa thông tin
+              </button>
+            </div>
+
             {/* ── Cột trái: đơn hàng + upsell ── */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-7 border-b md:border-b-0 md:border-r border-white/[0.07]">
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-7 order-last md:order-first">
               {/* Heading */}
-              <h2 className="font-heading text-2xl font-bold text-center mb-1" className="bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">
+              <h2 className="font-heading text-2xl font-bold text-center mb-1 bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">
                 Hoàn tất thanh toán
               </h2>
               <p className="text-center text-sm text-slate-400 mb-6">
@@ -279,87 +362,6 @@ export function PaymentModal({ open, onClose }) {
               </div>
             </div>
 
-            {/* ── Cột phải: QR + bank info ── */}
-            <div className="w-full md:w-[290px] flex-shrink-0 min-h-0 overflow-y-auto p-5 flex flex-col bg-[#0d1018]">
-              <h3 className="font-heading font-bold text-white text-center mb-4 text-sm">Quét QR để thanh toán</h3>
-
-              {/* QR */}
-              <div className="flex justify-center mb-4">
-                <div className="rounded-2xl bg-white p-3 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                  <img
-                    className="h-[160px] w-[160px] rounded-xl"
-                    src={qrUrl}
-                    alt="VietQR"
-                    onError={(e) => {
-                      e.target.parentElement.innerHTML = '<div class="h-[160px] w-[160px] flex flex-col items-center justify-center bg-slate-800 rounded-xl text-slate-400 text-xs text-center p-4"><div class="text-3xl mb-2">📱</div>QR thanh toán</div>'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Bank info */}
-              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 mb-4 space-y-2 text-xs">
-                {[
-                  { label: 'Ngân hàng',     value: 'MB Bank',      key: null },
-                  { label: 'Số tài khoản',  value: '0368683148',   key: 'stk' },
-                  { label: 'Chủ tài khoản', value: 'LE THANH DAT', key: null },
-                  { label: 'Số tiền',       value: fmtVND(totalAmount), key: null, highlight: true },
-                  { label: 'Nội dung CK',   value: noiDung,        key: 'nd' },
-                ].map(({ label, value, key, highlight }) => (
-                  <div key={label} className="flex items-center justify-between gap-2">
-                    <span className="text-slate-500 flex-shrink-0">{label}</span>
-                    {key ? (
-                      <button onClick={() => copy(value, key)}
-                        className={cn('rounded border px-2 py-0.5 font-mono transition-all',
-                          copied === key
-                            ? 'border-green-500/30 bg-green-500/15 text-green-300'
-                            : 'border-slate-700 bg-slate-800 text-white hover:border-blue-500/40')}>
-                        {copied === key ? '✓ Copied!' : `${value} ⧉`}
-                      </button>
-                    ) : (
-                      <span className={cn('font-semibold text-right', highlight ? 'text-blue-400' : 'text-white')}>{value}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Đang chờ */}
-              <div className="rounded-xl border border-green-700/30 bg-green-900/20 px-3 py-2.5 text-center mb-4">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"/>
-                  <p className="text-xs font-semibold text-green-300">Đang chờ thanh toán...</p>
-                </div>
-              </div>
-
-              {/* Tổng */}
-              <div className="mt-auto space-y-2 border-t border-white/[0.07] pt-3 text-sm">
-                <div className="flex justify-between text-slate-400">
-                  <span>Sản phẩm chính</span>
-                  <span>{fmtVND(799000)}</span>
-                </div>
-                {addOns.music && (
-                  <div className="flex justify-between text-slate-400">
-                    <span>Sound Design</span>
-                    <span>{fmtVND(299000)}</span>
-                  </div>
-                )}
-                {addOns.plugin && (
-                  <div className="flex justify-between text-slate-400">
-                    <span>Plugin</span>
-                    <span>{fmtVND(499000)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between font-heading font-bold text-base border-t border-white/[0.07] pt-2 mt-2">
-                  <span className="text-white">Tổng thanh toán</span>
-                  <span className="text-blue-400">{fmtVND(totalAmount)}</span>
-                </div>
-              </div>
-
-              <button onClick={() => setStep('form')}
-                className="mt-4 w-full text-xs text-slate-600 hover:text-slate-400 transition-colors">
-                ← Sửa thông tin
-              </button>
-            </div>
           </div>
         )}
 
