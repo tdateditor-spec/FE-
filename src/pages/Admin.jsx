@@ -400,14 +400,14 @@ function UserManagement() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr style={{ borderBottom:`1px solid ${T.border}` }}>
-                  {['Học viên','SĐT','Trạng thái','Tiến độ','Thanh toán','Ngày TG',''].map(h => (
+                  {['Học viên','SĐT','Trạng thái','Tiến độ','Thanh toán','Khoá học','Ngày TG',''].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {data.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-600">Không tìm thấy học viên nào</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-10 text-center text-slate-600">Không tìm thấy học viên nào</td></tr>
                 )}
                 {data.map((u, i) => {
                   const st = statusMap[u.status] || statusMap.inactive
@@ -437,6 +437,17 @@ function UserManagement() {
                       </td>
                       <td className="px-4 py-3">
                         <DarkBadge color={u.paid ? 'green' : 'yellow'}>{u.paid ? 'Đã trả' : 'Chưa trả'}</DarkBadge>
+                      </td>
+                      <td className="px-4 py-3">
+                        {u.courses?.length ? (
+                          <div className="flex flex-wrap gap-1">
+                            {u.courses.includes('edit')   && <span className="rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400">Edit</span>}
+                            {u.courses.includes('music')  && <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">Music</span>}
+                            {u.courses.includes('plugin') && <span className="rounded-md bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-violet-400">Plugin</span>}
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-600">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-slate-600 text-[12px]">{u.join_date || '—'}</td>
                       <td className="px-4 py-3">
