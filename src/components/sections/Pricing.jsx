@@ -10,12 +10,12 @@ const features = [
   { Icon: Layers,        text: '3 Chapters: Mindset → Skill → Sales',          color: 'text-violet-400', bg: 'bg-violet-500/10' },
   { Icon: Clapperboard,  text: 'Premiere Pro + After Effects từ zero',           color: 'text-blue-400',   bg: 'bg-blue-500/10' },
   { Icon: Search,        text: 'Hệ thống tìm client Instagram + Cold DM',        color: 'text-sky-400',    bg: 'bg-sky-500/10' },
-  { Icon: MessageSquare, text: '10 Template DM tiếng Anh sẵn dùng',             color: 'text-cyan-400',   bg: 'bg-cyan-500/10' },
-  { Icon: Brain,         text: '10 Script đàm phán 10 tình huống',               color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
   { Icon: Users,         text: 'Discord Community + Q&A hằng ngày',             color: 'text-emerald-400',bg: 'bg-emerald-500/10' },
-  { Icon: PhoneCall,     text: '1-1 Coaching Call ngày 90',                      color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+  { Icon: Infinity,      text: 'Truy cập và update miễn phí trọn đời',           color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+  { Icon: PhoneCall,     text: 'Call 1-1 miễn phí trực tiếp với mình',           color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+  { Icon: MessageSquare, text: 'Kịch bản Sales Call chuyên nghiệp',              color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
   { Icon: Gift,          text: '6 Bonus (trị giá 2,200,000đ)',                   color: 'text-pink-400',   bg: 'bg-pink-500/10' },
-  { Icon: Infinity,      text: 'Truy cập video vĩnh viễn',                       color: 'text-blue-300',   bg: 'bg-blue-400/10' },
+  { Icon: RotateCcw,     text: 'Truy cập video vĩnh viễn',                       color: 'text-blue-300',   bg: 'bg-blue-400/10' },
 ]
 
 export function Pricing({ onCTA }) {

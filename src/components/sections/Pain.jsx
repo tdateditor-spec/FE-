@@ -45,18 +45,30 @@ export function Pain() {
     <section className="py-24 px-6">
       <div className="mx-auto max-w-3xl">
 
-        {/* Header */}
+        {/* Header — hình nền + chữ đè lên */}
         <motion.div
           ref={headRef}
           initial={{ opacity: 0, y: 16 }}
           animate={headInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
-          className="text-center mb-10"
+          className="relative mb-10 overflow-hidden rounded-3xl"
         >
-          <p className="inline-block mb-4 rounded-full border border-red-500/25 bg-red-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-red-400">Bạn Có Đang...</p>
-          <h2 className="font-heading text-4xl font-extrabold text-white md:text-5xl leading-tight">
-            Ở Một Trong Những<br />Trạng Thái Này?
-          </h2>
+          {/* Ảnh nền vuông */}
+          <img
+            src="/hinh fix so 2.jpg"
+            alt=""
+            className="w-full object-cover"
+            style={{ aspectRatio: '1/1' }}
+          />
+          {/* Overlay tối để chữ dễ đọc */}
+          <div className="absolute inset-0 bg-black/55" />
+          {/* Chữ đè lên giữa ảnh */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+            <p className="inline-block mb-4 rounded-full border border-red-500/40 bg-red-500/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-red-400">Bạn Có Đang...</p>
+            <h2 className="font-heading text-4xl font-extrabold text-white md:text-5xl leading-tight drop-shadow-lg">
+              Ở Một Trong Những<br />Trạng Thái Này?
+            </h2>
+          </div>
         </motion.div>
 
         {/* Pain list */}

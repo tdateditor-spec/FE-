@@ -66,34 +66,34 @@ export function Hero({ onCTA }) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex items-end justify-center gap-5 sm:gap-8"
+          className="w-full flex items-end justify-center gap-6 sm:gap-12 md:gap-16"
         >
           {/* BEFORE */}
           <div style={{ filter: 'drop-shadow(0 16px 36px rgba(0,0,0,0.6))' }}>
-            <div className="w-[130px] sm:w-[160px] bg-white rounded-sm p-2 pb-6 sm:p-2.5 sm:pb-7" style={{ transform: 'rotate(-4deg)' }}>
+            <div className="w-[180px] sm:w-[230px] md:w-[260px] bg-white rounded-sm p-3 pb-9 sm:p-4 sm:pb-11" style={{ transform: 'rotate(-4deg)' }}>
               <div style={{ filter: 'grayscale(100%) contrast(1.05)' }}>
                 <img src="/z7837516370081_c74fa3f723643cac8eb8816b2799c68d.jpg" alt="Before"
                   className="w-full aspect-[3/4] object-cover object-top" />
               </div>
-              <p className="mt-1.5 text-center font-bold text-[9px] sm:text-[10px] text-slate-600 tracking-widest uppercase">Before</p>
+              <p className="mt-2 text-center font-bold text-[10px] sm:text-xs text-slate-600 tracking-widest uppercase">Before</p>
             </div>
           </div>
 
           {/* Arrow */}
-          <div className="flex flex-col items-center gap-1 mb-6 flex-shrink-0">
-            <svg viewBox="0 0 80 60" className="w-10 sm:w-12 text-white/60" fill="none">
+          <div className="flex flex-col items-center gap-1.5 mb-8 flex-shrink-0">
+            <svg viewBox="0 0 80 60" className="w-12 sm:w-16 text-white/60" fill="none">
               <path d="M4 50 Q22 8 62 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
               <path d="M54 12 L66 20 L56 27" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="text-[9px] sm:text-[10px] text-slate-500">90 ngày</span>
+            <span className="text-[10px] sm:text-xs text-slate-500">90 ngày</span>
           </div>
 
           {/* AFTER */}
           <div style={{ filter: 'drop-shadow(0 20px 44px rgba(0,0,0,0.7))' }}>
-            <div className="w-[148px] sm:w-[182px] bg-white rounded-sm p-2 pb-6 sm:p-2.5 sm:pb-7" style={{ transform: 'rotate(3deg)' }}>
+            <div className="w-[200px] sm:w-[255px] md:w-[285px] bg-white rounded-sm p-3 pb-9 sm:p-4 sm:pb-11" style={{ transform: 'rotate(3deg)' }}>
               <img src="/z7837520904327_079ceba089e65ad22f3ca257737ed004.jpg" alt="After"
                 className="w-full aspect-[3/4] object-cover object-top" />
-              <p className="mt-1.5 text-center font-bold text-[9px] sm:text-[10px] text-emerald-600 tracking-widest uppercase">After</p>
+              <p className="mt-2 text-center font-bold text-[10px] sm:text-xs text-emerald-600 tracking-widest uppercase">After</p>
             </div>
           </div>
         </motion.div>

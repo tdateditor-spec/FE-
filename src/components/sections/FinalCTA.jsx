@@ -12,17 +12,46 @@ export function FinalCTA({ onCTA }) {
         </h2>
 
         <div className="mb-12 grid gap-5 text-left md:grid-cols-2">
-          <div className="rounded-2xl border border-red-500/20 bg-white/[0.03] p-6">
-            <h4 className="font-heading mb-3 font-semibold text-red-400">Con đường 1</h4>
-            <p className="text-sm leading-relaxed text-slate-400">
-              Đóng trang này, tiếp tục xem YouTube (lời khuyên mâu thuẫn nhau), đăng Upwork tiếp tục im lặng. 3 tháng sau, vẫn ở đúng chỗ này, thu nhập không ổn định, vẫn tự hỏi "bao giờ mới bắt đầu được."
-            </p>
+          {/* Con đường 1 */}
+          <div className="rounded-2xl border border-red-500/20 bg-white/[0.03] overflow-hidden">
+            <div className="relative">
+              <img
+                src="/fix hinh so 3.jpg"
+                alt="Con đường 1"
+                className="w-full object-cover"
+                style={{ aspectRatio: '1/1', filter: 'grayscale(100%) contrast(1.05)' }}
+              />
+              <div className="absolute inset-0 bg-black/40" />
+              <div className="absolute top-3 left-3">
+                <span className="rounded-lg bg-red-500/80 px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">Con đường 1</span>
+              </div>
+            </div>
+            <div className="p-5">
+              <p className="text-sm leading-relaxed text-slate-400">
+                Đóng trang này, tiếp tục xem YouTube (lời khuyên mâu thuẫn nhau), đăng Upwork tiếp tục im lặng. 3 tháng sau, vẫn ở đúng chỗ này, thu nhập không ổn định, vẫn tự hỏi "bao giờ mới bắt đầu được."
+              </p>
+            </div>
           </div>
-          <div className="rounded-2xl border border-blue-500/30 bg-white/[0.03] p-6">
-            <h4 className="font-heading mb-3 font-semibold bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">Con đường 2</h4>
-            <p className="text-sm leading-relaxed text-slate-400">
-              Tham gia VIRAL FREEDOM SYSTEM với 799,000đ. 90 ngày sau, bạn có kỹ năng, portfolio, hệ thống tìm client và có thể đang trên đường đến 20–40 triệu/tháng như Kiên, Bình, Huy.
-            </p>
+
+          {/* Con đường 2 */}
+          <div className="rounded-2xl border border-blue-500/30 bg-white/[0.03] overflow-hidden">
+            <div className="relative">
+              <img
+                src="/fix hinh so 4.jpg"
+                alt="Con đường 2"
+                className="w-full object-cover"
+                style={{ aspectRatio: '1/1' }}
+              />
+              <div className="absolute inset-0 bg-black/30" />
+              <div className="absolute top-3 left-3">
+                <span className="rounded-lg bg-blue-500/80 px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">Con đường 2</span>
+              </div>
+            </div>
+            <div className="p-5">
+              <p className="text-sm leading-relaxed text-slate-400">
+                Tham gia VIRAL FREEDOM SYSTEM với 799,000đ. 90 ngày sau, bạn có kỹ năng, portfolio, hệ thống tìm client và có thể đang trên đường đến 20–40 triệu/tháng như Kiên, Bình, Huy.
+              </p>
+            </div>
           </div>
         </div>
 

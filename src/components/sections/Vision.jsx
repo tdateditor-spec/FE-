@@ -94,6 +94,16 @@ export function Vision({ onCTA }) {
             sau khi hoàn thành<br />
             lộ trình này?
           </h2>
+
+          {/* Hình minh hoạ */}
+          <div className="mt-10 flex justify-center">
+            <img
+              src="/hinh fix so 1.jpg"
+              alt="Sau 90 ngày"
+              className="w-full rounded-2xl object-cover"
+              style={{ aspectRatio: '1/1', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}
+            />
+          </div>
         </motion.div>
 
         {/* Morning narrative */}

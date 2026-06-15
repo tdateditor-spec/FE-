@@ -3,9 +3,9 @@ const items = [
   { tag: 'CORE', name: 'Chapter 2: Kỹ năng: Premiere Pro + After Effects theo chuẩn thị trường quốc tế', price: '3,500,000đ' },
   { tag: 'CORE', name: 'Chapter 3: Thu nhập: Hệ thống tìm client Instagram, Cold DM, đàm phán, giữ client dài hạn', price: '2,500,000đ' },
   { tag: 'BONUS', name: 'Cộng đồng Discord, hỏi đáp, chia sẻ tiến trình, kết nối học viên', price: '600,000đ' },
-  { tag: 'BONUS ẨN #1', name: 'Bộ 10 Template Cold DM tiếng Anh + Lịch outreach 30 ngày', price: '800,000đ' },
-  { tag: 'BONUS ẨN #2', name: 'Script xử lý 10 tình huống đàm phán với client', price: '500,000đ' },
-  { tag: 'BONUS ẨN #3', name: '"The Consistency Code", Hệ thống giữ kỷ luật 90 ngày', price: '300,000đ' },
+  { tag: 'PREMIUM #1', name: 'Truy cập và update miễn phí trọn đời', price: '' },
+  { tag: 'PREMIUM #2', name: 'Call 1-1 miễn phí trực tiếp với mình', price: '' },
+  { tag: 'PREMIUM #3', name: 'Kịch bản Sales Call chuyên nghiệp', price: '' },
   { tag: 'BONUS #4', name: '"The $0 Portfolio Blueprint", Build portfolio khi chưa có client', price: '400,000đ' },
   { tag: 'BONUS #5', name: '"The Rate Raise Script", Cách tăng giá mà không mất client', price: '400,000đ' },
   { tag: 'BONUS #6', name: 'Hướng dẫn mở Payoneer/Wise nhận tiền quốc tế', price: '200,000đ' },
@@ -23,8 +23,8 @@ export function OfferStack({ onCTA }) {
         <div className="overflow-hidden rounded-3xl border border-white/[0.07] bg-white/[0.03]">
           {items.map(({ tag, name, price }, i) => {
             const isCore = tag === 'CORE'
-            const isHidden = tag.includes('ẨN')
-            const tagColor = isCore ? 'text-blue-400' : isHidden ? 'text-purple-400' : 'text-green-400'
+            const isPremium = tag.includes('PREMIUM')
+            const tagColor = isCore ? 'text-blue-400' : isPremium ? 'text-yellow-400' : 'text-green-400'
             return (
               <div key={i} className="flex items-center justify-between border-b border-slate-800/70 p-5 last:border-0 hover:bg-white/[0.02] transition-colors">
                 <div>
