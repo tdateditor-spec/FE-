@@ -189,7 +189,7 @@ export function PaymentModal({ open, onClose }) {
           <div className="flex flex-col md:flex-row flex-1 min-h-0">
 
             {/* ── Cột phải (QR) — hiện đầu tiên trên mobile ── */}
-            <div className="w-full md:w-[290px] flex-shrink-0 min-h-0 overflow-y-auto p-5 flex flex-col bg-[#0d1018] border-b md:border-b-0 md:border-r border-white/[0.07] order-first md:order-last">
+            <div className="w-full md:w-[290px] flex-shrink-0 overflow-y-auto p-5 flex flex-col bg-[#0d1018] border-b md:border-b-0 md:border-r border-white/[0.07] order-first md:order-last max-h-[44vh] md:max-h-none">
               <h3 className="font-heading font-bold text-white text-center mb-3 text-sm">Quét QR để thanh toán</h3>
 
               {/* QR */}
@@ -271,7 +271,7 @@ export function PaymentModal({ open, onClose }) {
             </div>
 
             {/* ── Cột trái: đơn hàng + upsell ── */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-7 order-last md:order-first">
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-7 order-last md:order-first border-t md:border-t-0 border-white/[0.07]">
               {/* Heading */}
               <h2 className="font-heading text-2xl font-bold text-center mb-1 bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">
                 Hoàn tất thanh toán
