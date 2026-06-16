@@ -160,10 +160,7 @@ export default function App() {
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full bg-[#0068ff] px-4 py-3 shadow-[0_4px_24px_rgba(0,104,255,0.45)] hover:shadow-[0_4px_32px_rgba(0,104,255,0.65)] hover:-translate-y-1 transition-all group"
       >
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-          <path d="M11 1C5.477 1 1 5.15 1 10.267c0 2.9 1.388 5.492 3.567 7.233L4 21l3.933-1.967A10.39 10.39 0 0011 19.533C16.523 19.533 21 15.384 21 10.267 21 5.15 16.523 1 11 1z" fill="white"/>
-          <path d="M7 10.5c0-.828.448-1.5 1-1.5s1 .672 1 1.5S8.552 12 8 12s-1-.672-1-1.5zM10 10.5c0-.828.448-1.5 1-1.5s1 .672 1 1.5-.448 1.5-1 1.5-1-.672-1-1.5zM13 10.5c0-.828.448-1.5 1-1.5s1 .672 1 1.5-.448 1.5-1 1.5-1-.672-1-1.5z" fill="#0068ff"/>
-        </svg>
+        <img src="/logo Feak.png" alt="Zalo" className="h-6 w-6 rounded-full object-cover" />
         <span className="text-white text-sm font-semibold whitespace-nowrap">Hỗ trợ Zalo</span>
       </a>
     </div>
