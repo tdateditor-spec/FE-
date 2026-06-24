@@ -21,7 +21,9 @@ export function Hero({ onCTA }) {
       <div className="pointer-events-none absolute inset-0 opacity-[0.02]"
         style={{ backgroundImage: 'radial-gradient(circle, #60a5fa 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
-      <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 pt-24 pb-12 flex flex-col items-center text-center gap-5">
+      <div className="relative w-full pt-24 pb-12 flex flex-col items-center text-center gap-5">
+
+      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center gap-5">
 
         {/* Badge */}
         <motion.div
@@ -61,23 +63,27 @@ export function Hero({ onCTA }) {
           <span className="block text-white font-semibold">Bạn hoàn toàn có thể làm việc ở bất cứ đâu, bất cứ khi nào bạn muốn, chỉ cần một chiếc laptop và kết nối Internet.</span>
         </motion.p>
 
-        {/* Video */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-full max-w-2xl mx-auto"
-        >
-          <div className="relative rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)]" style={{ aspectRatio: '16/9' }}>
-            <iframe
-              className="absolute inset-0 w-full h-full"
-              src="https://www.youtube.com/embed/R8u-zAaczk0"
-              title="Viral Freedom System"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </motion.div>
+      </div>
+
+      {/* Video — container riêng, không bị giới hạn max-w-3xl */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="w-full max-w-5xl mx-auto px-4 sm:px-6"
+      >
+        <div className="relative rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)]" style={{ aspectRatio: '16/9' }}>
+          <iframe
+            className="absolute inset-0 w-full h-full"
+            src="https://www.youtube.com/embed/R8u-zAaczk0"
+            title="Viral Freedom System"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </motion.div>
+
+      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center gap-5">
 
         {/* CTA */}
         <motion.div
@@ -110,6 +116,7 @@ export function Hero({ onCTA }) {
         </motion.div>
 
 
+      </div>
       </div>
     </section>
   )
