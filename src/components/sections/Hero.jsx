@@ -61,40 +61,21 @@ export function Hero({ onCTA }) {
           <span className="block text-white font-semibold">Bạn hoàn toàn có thể làm việc ở bất cứ đâu, bất cứ khi nào bạn muốn, chỉ cần một chiếc laptop và kết nối Internet.</span>
         </motion.p>
 
-        {/* Polaroids */}
+        {/* Video */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-full flex items-end justify-center gap-6 sm:gap-12 md:gap-16"
+          className="w-full max-w-2xl mx-auto"
         >
-          {/* BEFORE */}
-          <div style={{ filter: 'drop-shadow(0 16px 36px rgba(0,0,0,0.6))' }}>
-            <div className="w-[130px] sm:w-[200px] md:w-[260px] bg-white rounded-sm p-2 pb-7 sm:p-3 sm:pb-9 md:p-4 md:pb-11" style={{ transform: 'rotate(-4deg)' }}>
-              <div style={{ filter: 'grayscale(100%) contrast(1.05)' }}>
-                <img src="/z7837516370081_c74fa3f723643cac8eb8816b2799c68d.jpg" alt="Before"
-                  className="w-full aspect-[3/4] object-cover object-top" />
-              </div>
-              <p className="mt-1.5 text-center font-bold text-[9px] sm:text-[10px] md:text-xs text-slate-600 tracking-widest uppercase">Before</p>
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <div className="flex flex-col items-center gap-1 mb-6 flex-shrink-0">
-            <svg viewBox="0 0 80 60" className="w-8 sm:w-12 md:w-16 text-white/60" fill="none">
-              <path d="M4 50 Q22 8 62 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M54 12 L66 20 L56 27" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="text-[9px] sm:text-xs text-slate-500">90 ngày</span>
-          </div>
-
-          {/* AFTER */}
-          <div style={{ filter: 'drop-shadow(0 20px 44px rgba(0,0,0,0.7))' }}>
-            <div className="w-[145px] sm:w-[220px] md:w-[285px] bg-white rounded-sm p-2 pb-7 sm:p-3 sm:pb-9 md:p-4 md:pb-11" style={{ transform: 'rotate(3deg)' }}>
-              <img src="/z7837520904327_079ceba089e65ad22f3ca257737ed004.jpg" alt="After"
-                className="w-full aspect-[3/4] object-cover object-top" />
-              <p className="mt-1.5 text-center font-bold text-[9px] sm:text-[10px] md:text-xs text-emerald-600 tracking-widest uppercase">After</p>
-            </div>
+          <div className="relative rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)]" style={{ aspectRatio: '16/9' }}>
+            <iframe
+              className="absolute inset-0 w-full h-full"
+              src="https://www.youtube.com/embed/R8u-zAaczk0"
+              title="Viral Freedom System"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
           </div>
         </motion.div>
 
