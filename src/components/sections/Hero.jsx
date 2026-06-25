@@ -52,17 +52,6 @@ export function Hero({ onCTA }) {
           Từ <AnimatedGradientText>Video Editing</AnimatedGradientText>
         </motion.h1>
 
-        {/* Subheadline */}
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-slate-400 text-sm sm:text-base max-w-2xl space-y-1"
-        >
-          <span className="block">Ngay cả khi bạn chưa từng edit, không có kinh nghiệm, hay không giỏi tiếng Anh, bạn vẫn có thể bắt đầu.</span>
-          <span className="block text-white font-semibold">Bạn hoàn toàn có thể làm việc ở bất cứ đâu, bất cứ khi nào bạn muốn, chỉ cần một chiếc laptop và kết nối Internet.</span>
-        </motion.p>
-
       </div>
 
       {/* Video — container riêng, không bị giới hạn max-w-3xl */}
@@ -84,6 +73,17 @@ export function Hero({ onCTA }) {
       </motion.div>
 
       <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center gap-5">
+
+        {/* Subheadline */}
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-slate-400 text-sm sm:text-base max-w-2xl space-y-1"
+        >
+          <span className="block">Ngay cả khi bạn chưa từng edit, không có kinh nghiệm, hay không giỏi tiếng Anh, bạn vẫn có thể bắt đầu.</span>
+          <span className="block text-white font-semibold">Bạn hoàn toàn có thể làm việc ở bất cứ đâu, bất cứ khi nào bạn muốn, chỉ cần một chiếc laptop và kết nối Internet.</span>
+        </motion.p>
 
         {/* CTA */}
         <motion.div

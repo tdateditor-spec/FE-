@@ -147,8 +147,8 @@ export default function App() {
         <SocialProof onCTA={openModal} />
         <OfferStack onCTA={openModal} />
         <Pricing onCTA={openModal} />
-        <FAQ onCTA={openModal} />
         <FinalCTA onCTA={openModal} />
+        <FAQ onCTA={openModal} />
       </main>
       <Footer />
       <PaymentModal open={modalOpen} onClose={closeModal} />
