@@ -77,7 +77,13 @@ export function PaymentModal({ open, onClose }) {
       try {
         const res  = await fetch(`${API}/api/register/status?email=${encodeURIComponent(email)}`)
         const data = await res.json()
-        if (data.paid) { stopPolling(); setStep('success') }
+        if (data.paid) {
+          stopPolling()
+          onClose()
+          const amt = 799000 + (addOns.music ? 299000 : 0) + (addOns.plugin ? 499000 : 0)
+          window.history.pushState({}, '', `/thankyou?email=${encodeURIComponent(email)}&amount=${amt}`)
+          window.dispatchEvent(new PopStateEvent('popstate'))
+        }
       } catch {}
     }, 4000)
   }

@@ -6,6 +6,7 @@ import { Profile } from './pages/Profile'
 import { NotFound } from './pages/NotFound'
 import { ForgotPassword } from './pages/ForgotPassword'
 import { ResetPassword } from './pages/ResetPassword'
+import { ThankYou } from './pages/ThankYou'
 import { Dashboard } from './pages/Dashboard'
 import { Admin } from './pages/Admin'
 import { Navbar } from './components/Navbar'
@@ -65,6 +66,7 @@ export default function App() {
     if (p === '/forgot-password')   return 'forgot-password'
     if (p === '/reset-password')    return 'reset-password'
     if (p === '/' || p === '')      return 'home'
+    if (p === '/thankyou')          return 'thankyou'
     return '404'
   }
   const [page, setPage] = useState(getPage)
@@ -131,6 +133,7 @@ export default function App() {
   if (page === 'admin')            return <Admin onBack={goDashboard} onLogout={handleLogout} />
   if (page === 'forgot-password')  return <ForgotPassword onBack={goLogin} />
   if (page === 'reset-password')   return <ResetPassword onSuccess={goLogin} />
+  if (page === 'thankyou')         return <ThankYou onLogin={goLogin} />
   if (page === '404')              return <NotFound onBack={goDashboard} />
 
   return (
