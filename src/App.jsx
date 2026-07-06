@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { api } from './lib/api'
 import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
@@ -7,10 +7,10 @@ import { NotFound } from './pages/NotFound'
 import { ForgotPassword } from './pages/ForgotPassword'
 import { ResetPassword } from './pages/ResetPassword'
 import { ThankYou } from './pages/ThankYou'
+import { Checkout } from './pages/Checkout'
 import { Dashboard } from './pages/Dashboard'
 import { Admin } from './pages/Admin'
 import { Navbar } from './components/Navbar'
-import { PaymentModal } from './components/PaymentModal'
 import { Hero } from './components/sections/Hero'
 import { OriginStory } from './components/sections/OriginStory'
 import { Vision } from './components/sections/Vision'
@@ -54,8 +54,6 @@ function Footer() {
 }
 
 export default function App() {
-  const [modalOpen, setModalOpen] = useState(false)
-
   const getPage = () => {
     const p = window.location.pathname
     if (p === '/course')            return 'course'
@@ -67,6 +65,7 @@ export default function App() {
     if (p === '/reset-password')    return 'reset-password'
     if (p === '/' || p === '')      return 'home'
     if (p === '/thankyou')          return 'thankyou'
+    if (p === '/checkout')          return 'checkout'
     return '404'
   }
   const [page, setPage] = useState(getPage)
@@ -89,11 +88,10 @@ export default function App() {
   const goChangePass   = () => navigate('/change-password')
   const goProfile      = () => navigate('/profile')
   const goForgotPass   = () => navigate('/forgot-password')
+  const goCheckout     = () => navigate('/checkout')
   const handleLogout   = () => { api.clearToken(); api.clearMustChange(); window.location.href = '/login' }
 
-  const openModal = () => setModalOpen(true)
-  const closeModal = () => setModalOpen(false)
-
+  const openModal = goCheckout   // alias để các section dùng onCTA vẫn hoạt động
   const loggedIn = api.isLoggedIn()
 
   // Lấy role từ token
@@ -134,6 +132,7 @@ export default function App() {
   if (page === 'forgot-password')  return <ForgotPassword onBack={goLogin} />
   if (page === 'reset-password')   return <ResetPassword onSuccess={goLogin} />
   if (page === 'thankyou')         return <ThankYou onLogin={goLogin} />
+  if (page === 'checkout')         return <Checkout onBack={goHome} />
   if (page === '404')              return <NotFound onBack={goDashboard} />
 
   return (
@@ -154,8 +153,6 @@ export default function App() {
         <FAQ onCTA={openModal} />
       </main>
       <Footer />
-      <PaymentModal open={modalOpen} onClose={closeModal} />
-
     </div>
   )
 }
