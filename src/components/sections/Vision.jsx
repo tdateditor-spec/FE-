@@ -89,7 +89,7 @@ export function Vision({ onCTA }) {
           className="text-center mb-14"
         >
           <p className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">Sau 90 Ngày</p>
-          <h2 className="font-heading text-2xl font-extrabold text-white md:text-3xl leading-tight">
+          <h2 className="font-heading text-2xl font-extrabold text-white md:text-4xl leading-tight">
             Vậy cuộc sống của bạn sẽ trông như thế nào<br />
             sau khi hoàn thành<br />
             lộ trình này?
