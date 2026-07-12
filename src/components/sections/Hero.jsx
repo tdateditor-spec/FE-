@@ -44,7 +44,7 @@ export function Hero({ onCTA }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="font-heading text-[34px] sm:text-4xl xl:text-5xl font-bold text-white tracking-tight"
+          className="font-heading text-[33px] sm:text-4xl xl:text-5xl font-bold text-white tracking-tight"
           style={{ lineHeight: 1.2 }}
         >
           Lộ Trình Từng Bước<br />
