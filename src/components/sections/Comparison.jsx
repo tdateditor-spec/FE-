@@ -93,7 +93,7 @@ export function Comparison() {
   const headInView = useInView(headRef, { once: true, margin: '-60px' })
 
   return (
-    <section className="py-24 px-6 overflow-hidden">
+    <section className="py-14 px-6 overflow-hidden">
       <div className="mx-auto max-w-4xl">
 
         {/* Header */}
@@ -107,7 +107,7 @@ export function Comparison() {
           <p className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">
             Sự Khác Biệt Thực Sự
           </p>
-          <h2 className="font-heading text-4xl font-extrabold text-white md:text-5xl leading-tight">
+          <h2 className="font-heading text-2xl font-extrabold text-white md:text-3xl leading-tight">
             Tự Mày Mò Một Mình{' '}
             <span className="gradient-text">vs</span>{' '}
             Có Hệ Thống Rõ Ràng

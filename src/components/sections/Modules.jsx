@@ -189,7 +189,7 @@ export function Modules() {
   const headerInView = useInView(headerRef, { once: true })
 
   return (
-    <section className="py-24 px-6 bg-slate-900/20">
+    <section className="py-14 px-6 bg-slate-900/20">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <motion.div
@@ -200,7 +200,7 @@ export function Modules() {
           className="text-center mb-14"
         >
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-blue-400">Lộ Trình Chi Tiết</p>
-          <h2 className="font-heading mb-4 text-3xl font-bold text-white md:text-4xl lg:text-5xl leading-tight">
+          <h2 className="font-heading mb-4 text-2xl font-bold text-white md:text-3xl lg:text-5xl leading-tight">
             4 Module: Từng Bước<br className="hidden sm:block" /> Đến Thu Nhập Tự Do
           </h2>
           <p className="text-slate-400 max-w-lg mx-auto leading-relaxed text-sm md:text-base">

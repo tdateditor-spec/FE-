@@ -13,10 +13,10 @@ const items = [
 
 export function OfferStack({ onCTA }) {
   return (
-    <section className="py-20 px-6">
+    <section className="py-12 px-6">
       <div className="mx-auto max-w-3xl">
         <p className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">Toàn Bộ Gói</p>
-        <h2 className="font-heading mb-12 text-center text-4xl font-extrabold text-white md:text-5xl">
+        <h2 className="font-heading mb-12 text-center text-2xl font-extrabold text-white md:text-3xl">
           Bạn Nhận Được Tất Cả Những Gì Sau Đây
         </h2>
 
@@ -49,12 +49,11 @@ export function OfferStack({ onCTA }) {
               <span className="font-heading font-bold text-white">Giá ra mắt hôm nay:</span>
               <span className="font-heading text-3xl font-bold bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">799,000đ</span>
             </div>
-            <p className="mt-1 text-right text-xs text-blue-400">Chỉ áp dụng cho cohort đầu tiên</p>
             <button
               onClick={onCTA}
               className="mt-5 w-full rounded-2xl bg-gradient-to-r from-blue-700 via-blue-500 to-blue-700 py-4 font-heading font-bold text-white shadow-[0_0_30px_rgba(59,130,246,0.35)] transition-all hover:shadow-[0_0_50px_rgba(59,130,246,0.6)] hover:-translate-y-0.5 text-lg"
             >
-              → TÔI MUỐN VÀO NGAY. CHỈ 799,000Đ
+              Tham gia ngay
             </button>
           </div>
         </div>

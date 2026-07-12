@@ -88,9 +88,9 @@ function StoryBlock({ type, text, src, caption }) {
       initial={{ opacity: 0, y: 12 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5 }}
-      className="border-l-4 border-blue-500 pl-5 py-1"
+      className="py-1"
     >
-      <p className="text-lg font-semibold text-white italic leading-relaxed">{text}</p>
+      <p className="text-base text-slate-300 leading-relaxed">{text}</p>
     </motion.blockquote>
   )
 
@@ -126,7 +126,7 @@ export function OriginStory() {
   const conclusionInView = useInView(conclusionRef, { once: true, margin: '-80px' })
 
   return (
-    <section className="py-20 px-6">
+    <section className="py-12 px-6">
       <div className="mx-auto max-w-3xl">
 
         {/* Header */}
@@ -138,7 +138,7 @@ export function OriginStory() {
           className="text-center mb-14"
         >
           <p className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">Câu Chuyện Thật</p>
-          <h2 className="font-heading text-3xl font-extrabold text-white md:text-4xl leading-tight">
+          <h2 className="font-heading text-2xl font-extrabold text-white md:text-3xl leading-tight">
             Từ Mất Phương Hướng Đến<br />
             <span className="text-emerald-400">Thu Nhập 9 Chữ Số Mỗi Tháng</span>
           </h2>

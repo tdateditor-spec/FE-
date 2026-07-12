@@ -3,11 +3,11 @@ import { TextReveal } from '../ui/TextReveal'
 
 export function FinalCTA({ onCTA }) {
   return (
-    <section className="relative overflow-hidden py-24 px-6">
+    <section className="relative overflow-hidden py-14 px-6">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-blue-800/15" />
 
       <div className="relative mx-auto max-w-3xl text-center">
-        <h2 className="font-heading mb-6 text-3xl font-bold text-white leading-tight md:text-5xl">
+        <h2 className="font-heading mb-6 text-2xl font-bold text-white leading-tight md:text-4xl">
           <TextReveal text="Hai Con Đường Phía Trước Bạn" />
         </h2>
 
@@ -56,7 +56,7 @@ export function FinalCTA({ onCTA }) {
         </div>
 
         <ShimmerButton onClick={onCTA} className="mb-6 text-sm sm:text-xl px-6 sm:px-12 py-4 sm:py-5 animate-pulse-blue w-full sm:w-auto">
-          → TÔI SẴN SÀNG. BẮT ĐẦU VIRAL FREEDOM SYSTEM NGAY
+          Tham gia ngay
         </ShimmerButton>
 
 <div className="mx-auto max-w-2xl rounded-2xl border border-slate-800 bg-white/[0.03] p-7 text-left">

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 
 export function BeforeAfter() {
   return (
-    <section className="relative overflow-hidden py-16 px-4">
+    <section className="relative overflow-hidden py-10 px-4">
       {/* Dark maroon-ish background glow */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_50%,rgba(80,10,10,0.35),transparent)]" />
 

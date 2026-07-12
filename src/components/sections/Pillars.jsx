@@ -84,7 +84,7 @@ export function Pillars() {
   const conclusionInView = useInView(conclusionRef, { once: true, margin: '-60px' })
 
   return (
-    <section id="system" className="py-24 px-6">
+    <section id="system" className="py-14 px-6">
       <div className="mx-auto max-w-5xl">
 
         {/* Header */}
@@ -96,9 +96,8 @@ export function Pillars() {
           className="text-center mb-6"
         >
           <p className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">Hệ Thống Cốt Lõi</p>
-          <h2 className="font-heading text-4xl font-extrabold text-white md:text-5xl leading-tight mb-4">
-            3 Thứ Tạo Ra Sự Khác Biệt Giữa<br />
-            Editor Kiếm <AnimatedGradientText>$0</AnimatedGradientText> Và Editor Kiếm <AnimatedGradientText>$1,000+/Tháng</AnimatedGradientText>
+          <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight mb-4 max-w-2xl mx-auto">
+            3 Thứ Tạo Ra Sự Khác Biệt Giữa Editor Kiếm <AnimatedGradientText>$0</AnimatedGradientText> Và Editor Kiếm <AnimatedGradientText>$1,000+/Tháng</AnimatedGradientText>
           </h2>
           <p className="text-slate-400 max-w-2xl mx-auto leading-relaxed">
             Sau khi tự đi qua con đường này và đồng hành cùng nhiều bạn trẻ Việt bắt đầu từ con số 0, mình nhận ra một sự thật:{' '}

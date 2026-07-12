@@ -33,7 +33,7 @@ export function Hero({ onCTA }) {
           className="inline-flex items-center gap-2 rounded-full border border-blue-500/25 bg-blue-500/[0.07] px-4 py-2 backdrop-blur-sm"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
-          <span className="text-xs sm:text-sm text-slate-400">
+          <span className="text-[13px] text-slate-400">
             Dành cho những bạn trẻ đang cảm thấy ngột ngạt với định hướng an toàn, khao khát tự chủ tài chính và cuộc sống tự do{' '}
             <span className="text-blue-300 font-medium">nhưng không biết bắt đầu từ kỹ năng nào.</span>
           </span>
@@ -44,7 +44,7 @@ export function Hero({ onCTA }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="font-heading text-4xl sm:text-5xl xl:text-[60px] font-bold text-white tracking-tight"
+          className="font-heading text-2xl sm:text-3xl xl:text-4xl font-bold text-white tracking-tight"
           style={{ lineHeight: 1.2 }}
         >
           Lộ Trình Từng Bước<br />
@@ -93,7 +93,7 @@ export function Hero({ onCTA }) {
           className="flex flex-col items-center gap-2 mt-4"
         >
           <ShimmerButton onClick={onCTA} className="text-sm sm:text-lg px-8 sm:px-12 py-4 sm:py-5 animate-pulse-blue">
-            Tham Gia VIRAL FREEDOM SYSTEM 799K
+            Tham gia ngay
           </ShimmerButton>
           <p className="text-slate-500 text-xs">
             Giá gốc: <span className="line-through">4,800,000đ</span>{' '}

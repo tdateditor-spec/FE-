@@ -77,7 +77,7 @@ export function Vision({ onCTA }) {
   const whyInView = useInView(whyRef, { once: true, margin: '-80px' })
 
   return (
-    <section className="py-24 px-6 bg-slate-900/20">
+    <section className="py-14 px-6 bg-slate-900/20">
       <div className="mx-auto max-w-3xl">
 
         {/* Header */}
@@ -89,7 +89,7 @@ export function Vision({ onCTA }) {
           className="text-center mb-14"
         >
           <p className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">Sau 90 Ngày</p>
-          <h2 className="font-heading text-3xl font-extrabold text-white md:text-4xl leading-tight">
+          <h2 className="font-heading text-2xl font-extrabold text-white md:text-3xl leading-tight">
             Vậy cuộc sống của bạn sẽ trông như thế nào<br />
             sau khi hoàn thành<br />
             lộ trình này?

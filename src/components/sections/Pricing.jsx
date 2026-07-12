@@ -23,7 +23,7 @@ export function Pricing({ onCTA }) {
   const inView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section id="pricing" className="py-24 px-6">
+    <section id="pricing" className="py-14 px-6">
       <div className="mx-auto max-w-xl">
 
         {/* Header */}
@@ -34,7 +34,7 @@ export function Pricing({ onCTA }) {
           className="text-center mb-10"
         >
           <p className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">Học Phí</p>
-          <h2 className="font-heading text-4xl font-extrabold text-white md:text-5xl mb-3">Tham Gia Ngay Hôm Nay</h2>
+          <h2 className="font-heading text-2xl font-extrabold text-white md:text-3xl mb-3">Tham Gia Ngay Hôm Nay</h2>
           <p className="text-sm text-slate-400">Cohort đầu tiên, nhóm nhỏ để theo dõi chuyên sâu và tối ưu chương trình trước khi ra mắt đại trà.</p>
         </motion.div>
 
@@ -59,7 +59,7 @@ export function Pricing({ onCTA }) {
             <div className="mb-7 text-center">
               <div className="mb-1.5 text-sm text-slate-500">Giá gốc: 4,800,000đ</div>
               <div
-                className="font-heading text-6xl font-bold bg-clip-text text-transparent"
+                className="font-heading text-5xl font-bold bg-clip-text text-transparent"
                 style={{ backgroundImage: 'linear-gradient(135deg, #93c5fd 0%, #ffffff 50%, #60a5fa 100%)' }}
               >
                 799,000đ
@@ -93,9 +93,8 @@ export function Pricing({ onCTA }) {
 
             {/* CTA */}
             <ShimmerButton onClick={onCTA} className="w-full text-base py-5">
-              → TÔI SẴN SÀNG. BẮT ĐẦU NGAY
+              Tham gia ngay
             </ShimmerButton>
-            <p className="mt-3 text-center text-xs text-slate-500">🔒 Thanh toán an toàn • Truy cập trong 24 giờ</p>
           </div>
         </motion.div>
 

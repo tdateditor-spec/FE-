@@ -17,10 +17,10 @@ export function FAQ({ onCTA }) {
   const [open, setOpen] = useState(null)
 
   return (
-    <section id="faq" className="py-20 px-6 bg-slate-900/20">
+    <section id="faq" className="py-12 px-6 bg-slate-900/20">
       <div className="mx-auto max-w-3xl">
         <p className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">FAQ</p>
-        <h2 className="font-heading mb-14 text-center text-4xl font-extrabold text-white md:text-5xl">Câu Hỏi Thường Gặp</h2>
+        <h2 className="font-heading mb-14 text-center text-2xl font-extrabold text-white md:text-3xl">Câu Hỏi Thường Gặp</h2>
 
         <div className="space-y-3">
           {faqs.map(({ q, a }, i) => (
@@ -44,7 +44,7 @@ export function FAQ({ onCTA }) {
             onClick={onCTA}
             className="inline-block rounded-2xl bg-gradient-to-r from-blue-700 via-blue-500 to-blue-700 px-10 py-4 font-heading text-lg font-bold text-white shadow-[0_0_30px_rgba(59,130,246,0.35)] hover:shadow-[0_0_50px_rgba(59,130,246,0.6)] hover:-translate-y-0.5 transition-all"
           >
-            → TÔI SẴN SÀNG. BẮT ĐẦU NGAY
+            Tham gia ngay
           </button>
         </div>
       </div>

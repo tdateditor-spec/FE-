@@ -130,7 +130,7 @@ export function Checkout({ onBack }) {
 
       {/* ── STEP 1: Form ── */}
       {step === 'form' && (
-        <div className="relative mx-auto max-w-lg px-4 py-12">
+        <div className="relative mx-auto max-w-2xl px-4 py-10">
           <div className="text-center mb-8">
             <span className="rounded-full border border-blue-500/30 bg-blue-600/20 px-3 py-1 text-xs font-semibold text-blue-300">
               VIRAL FREEDOM SYSTEM
@@ -259,10 +259,89 @@ export function Checkout({ onBack }) {
                 </div>
               ))}
 
+              {/* Bạn nhận được */}
+              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] overflow-hidden">
+                <div className="px-5 py-3 border-b border-white/[0.07]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Bạn nhận được tất cả những gì sau đây</p>
+                </div>
+                {[
+                  { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 1: Mindset — Reset tư duy + Roadmap $1,000 đầu tiên' },
+                  { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 2: Kỹ năng — Premiere Pro + After Effects chuẩn quốc tế' },
+                  { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 3: Thu nhập — Tìm client, Cold DM, đàm phán, giữ client dài hạn' },
+                  { tag: 'BONUS',   color: 'text-emerald-400', name: 'Cộng đồng Discord hỗ trợ 24/7' },
+                  { tag: 'PREMIUM', color: 'text-yellow-400',  name: 'Truy cập & update miễn phí trọn đời' },
+                  { tag: 'PREMIUM', color: 'text-yellow-400',  name: 'Call 1-1 miễn phí trực tiếp' },
+                  { tag: 'BONUS',   color: 'text-emerald-400', name: '"The $0 Portfolio Blueprint"' },
+                  { tag: 'BONUS',   color: 'text-emerald-400', name: '"The Rate Raise Script"' },
+                ].map(({ tag, color, name }, i) => (
+                  <div key={i} className="flex items-center gap-3 border-b border-white/[0.05] px-5 py-3 last:border-0">
+                    <span className="text-emerald-400 text-sm flex-shrink-0">✓</span>
+                    <div>
+                      <span className={`text-[10px] font-bold ${color}`}>{tag} </span>
+                      <span className="text-xs text-white">{name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {/* Cộng đồng */}
               <div className="rounded-2xl border border-blue-500/20 bg-blue-900/10 p-5">
                 <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-2">Cộng Đồng Viral Freedom Sẽ Sớm Tăng Giá</p>
                 <p className="text-xs text-slate-400 leading-relaxed">{COMMUNITY_NOTE}</p>
+              </div>
+
+              {/* Testimonials */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Học viên nói gì</p>
+                {[
+                  {
+                    name: 'Nguyễn Minh Tuấn',
+                    role: 'Freelance Video Editor',
+                    avatar: 'MT',
+                    text: 'Trước khi học mình không biết gì về edit, chỉ sau 3 tuần đã nhận được khách hàng đầu tiên từ Instagram. Lộ trình rất rõ ràng và thực tế.',
+                  },
+                  {
+                    name: 'Trần Thị Hương',
+                    role: 'Content Creator',
+                    avatar: 'TH',
+                    text: 'Mình đã thử nhiều khoá khác nhưng đây là khoá duy nhất dạy mình cách tìm client thực sự. Tháng đầu kiếm được 8 triệu từ video editing.',
+                  },
+                  {
+                    name: 'Lê Quang Huy',
+                    role: 'Video Editor - Agency',
+                    avatar: 'QH',
+                    text: 'Chapter 3 về Sales là phần mình thấy giá trị nhất. Giờ mình có 3 client cố định, thu nhập ổn định hơn công việc văn phòng cũ nhiều.',
+                  },
+                ].map(({ name, role, avatar, text }) => (
+                  <div key={name} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-600/30 text-xs font-bold text-blue-300">
+                        {avatar}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-white">{name}</p>
+                        <p className="text-[10px] text-slate-500">{role}</p>
+                      </div>
+                      <div className="ml-auto flex gap-0.5">
+                        {[...Array(5)].map((_, i) => <span key={i} className="text-yellow-400 text-xs">★</span>)}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">"{text}"</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Cam kết hoàn tiền */}
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-900/10 p-5 flex gap-4 items-start">
+                <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xl">
+                  🛡️
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-emerald-400 mb-1">Cam Kết Hoàn Tiền 100%</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Nếu sau <strong className="text-white">7 ngày</strong> học bạn cảm thấy chương trình không phù hợp, chúng tôi sẽ hoàn lại <strong className="text-white">100% học phí</strong> — không hỏi lý do.
+                  </p>
+                </div>
               </div>
             </div>
 

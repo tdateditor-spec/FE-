@@ -42,7 +42,7 @@ export function Pain() {
   const solInView = useInView(solRef, { once: true, margin: '-60px' })
 
   return (
-    <section className="py-24 px-6">
+    <section className="py-14 px-6">
       <div className="mx-auto max-w-3xl">
 
         {/* Header — hình nền + chữ đè lên */}
@@ -65,7 +65,7 @@ export function Pain() {
           {/* Chữ đè lên giữa ảnh */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
             <p className="inline-block mb-4 rounded-full border border-red-500/40 bg-red-500/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-red-400">Bạn Có Đang...</p>
-            <h2 className="font-heading text-4xl font-extrabold text-white md:text-5xl leading-tight drop-shadow-lg">
+            <h2 className="font-heading text-2xl font-extrabold text-white md:text-3xl leading-tight drop-shadow-lg">
               Ở Một Trong Những<br />Trạng Thái Này?
             </h2>
           </div>

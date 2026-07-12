@@ -14,7 +14,7 @@ export function Navbar({ onCTA, onLogin }) {
   return (
     <nav className={`fixed left-0 right-0 top-0 z-40 transition-all duration-300 ${scrolled ? 'bg-[#080f1e]/95 backdrop-blur-xl border-b border-white/5' : ''}`}>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a href="#" className="flex items-center gap-2.5">
+        <a href="#" className="hidden md:flex items-center gap-2.5">
           <img src="/logo Feak.png" alt="Logo" className="h-8 w-8 rounded-lg object-cover" />
           <span className="font-heading font-bold text-white tracking-tight">VIRAL FREEDOM</span>
         </a>
@@ -30,25 +30,27 @@ export function Navbar({ onCTA, onLogin }) {
             Đăng Nhập
           </button>
           <ShimmerButton onClick={onCTA} className="text-sm px-5 py-2.5 text-base">
-            Bắt Đầu Ngay →
+            Tham gia ngay
           </ShimmerButton>
         </div>
 
-        <button className="md:hidden text-slate-400" onClick={() => setMobileOpen(v => !v)}>
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-
-      {mobileOpen && (
-        <div className="md:hidden border-t border-slate-800 bg-slate-900/95 px-6 py-4 space-y-3">
-          {[['#system', 'Hệ Thống'], ['#roadmap', 'Lộ Trình'], ['#proof', 'Kết Quả'], ['#pricing', 'Học Phí']].map(([href, label]) => (
-            <a key={href} href={href} className="block text-sm text-slate-300" onClick={() => setMobileOpen(false)}>{label}</a>
-          ))}
-          <ShimmerButton onClick={onCTA} className="w-full text-sm">Bắt Đầu Ngay →</ShimmerButton>
+        {/* Mobile: CTA + giảm giá */}
+        <div className="flex md:hidden flex-1 items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <span className="text-sm text-emerald-400 font-bold leading-tight">Giá ưu đãi hơn 83%</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 line-through leading-tight">4,800,000đ</span>
+              <span className="text-base font-extrabold leading-tight bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">799,000đ</span>
+            </div>
+          </div>
+          <button
+            onClick={onCTA}
+            className="rounded-xl bg-gradient-to-r from-blue-700 via-blue-500 to-blue-700 px-4 py-2 text-xs font-bold text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]"
+          >
+            Tham gia ngay
+          </button>
         </div>
-      )}
+      </div>
     </nav>
   )
 }

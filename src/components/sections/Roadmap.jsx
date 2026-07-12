@@ -193,7 +193,7 @@ function ChapterBlock({ chapter, index }) {
       className="relative"
     >
       {/* Chapter header */}
-      <div className="flex items-center gap-4 mb-5">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 mb-5 text-center sm:text-left">
         <motion.div
           initial={{ scale: 0 }}
           animate={inView ? { scale: 1 } : {}}
@@ -223,7 +223,7 @@ function ChapterBlock({ chapter, index }) {
       </div>
 
       {/* Phase cards with left connector line */}
-      <div className="ml-16 relative">
+      <div className="sm:ml-16 relative">
         {/* Vertical connector */}
         <div
           className={`absolute left-[5px] top-2 bottom-6 w-px ${chapter.color.connector}`}
@@ -250,7 +250,7 @@ export function Roadmap() {
   const headerInView = useInView(headerRef, { once: true });
 
   return (
-    <section id="roadmap" className="py-24 px-6 bg-slate-900/20">
+    <section id="roadmap" className="py-14 px-6 bg-slate-900/20">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <motion.div
@@ -266,7 +266,7 @@ export function Roadmap() {
               Lộ Trình 90 Ngày
             </span>
           </div>
-          <h2 className="font-heading mb-4 text-4xl font-extrabold text-white md:text-5xl leading-tight">
+          <h2 className="font-heading mb-4 text-2xl font-extrabold text-white md:text-3xl leading-tight">
             <AnimatedGradientText>Mindset → Skill → Sales</AnimatedGradientText>
           </h2>
           <p className="mt-3 text-slate-300 max-w-xl mx-auto text-base leading-relaxed">

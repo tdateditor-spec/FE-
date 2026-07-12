@@ -41,7 +41,7 @@ export function SocialProof({ onCTA }) {
   const inView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section id="proof" className="py-24 px-6 bg-slate-900/20">
+    <section id="proof" className="py-14 px-6 bg-slate-900/20">
       <div className="mx-auto max-w-5xl">
 
         {/* Header */}
@@ -54,7 +54,7 @@ export function SocialProof({ onCTA }) {
           <span className="inline-block mb-4 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400">
             Kết Quả Thực Tế
           </span>
-          <h2 className="font-heading text-4xl font-extrabold text-white md:text-5xl mb-4">
+          <h2 className="font-heading text-2xl font-extrabold text-white md:text-3xl mb-4">
             3 Người Thật<br className="hidden md:block" /> 3 Xuất Phát Điểm Như Bạn
           </h2>
           <p className="text-slate-400 max-w-xl mx-auto">
@@ -101,7 +101,7 @@ export function SocialProof({ onCTA }) {
             👉 Nếu họ làm được, liệu bạn có làm được không?
           </p>
           <ShimmerButton onClick={onCTA} className="text-base px-8 py-4">
-            → Tôi Muốn Bắt Đầu Ngay
+            Tham gia ngay
           </ShimmerButton>
         </motion.div>
       </div>
