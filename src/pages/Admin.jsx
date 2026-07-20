@@ -9,7 +9,7 @@ import {
   Video, Clock, AlertTriangle, Lock, Unlock,
   ChevronDown, ChevronUp, Activity,
   Shield, Bell, Download, X, Check,
-  GraduationCap, ShieldCheck,
+  GraduationCap, ShieldCheck, GripVertical,
 } from 'lucide-react'
 
 /* ─── Theme tokens (matching Dashboard) ─────────────────────────────────── */
@@ -87,8 +87,8 @@ function Modal({ open, onClose, title, children, maxW = '420px' }) {
       onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ opacity:0, scale:0.96, y:8 }} animate={{ opacity:1, scale:1, y:0 }}
         exit={{ opacity:0, scale:0.96 }} transition={{ duration: 0.18 }}
-        className="w-full rounded-3xl border p-6 shadow-2xl"
-        style={{ maxWidth: maxW, background: '#1a1d2e', borderColor: T.border }}>
+        className="w-full rounded-3xl border p-6 shadow-2xl overflow-y-auto"
+        style={{ maxWidth: maxW, maxHeight: 'calc(100vh - 48px)', background: '#1a1d2e', borderColor: T.border }}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-[15px] font-semibold text-white">{title}</h3>
           <button onClick={onClose} className="text-slate-600 hover:text-white transition-colors"><X size={16}/></button>
@@ -637,6 +637,10 @@ function ModuleManagement({ chapters, setChapters }) {
   const [actionId, setActionId] = useState(null)
   const [chForm, setChForm]   = useState({ title:'', description:'' })
   const [lForm, setLForm]     = useState({ title:'', duration:'', free:false, videoUrl:'', keyPoints:'', content:'', tags:'' })
+  const [dragCh, setDragCh]   = useState(null)
+  const [overCh, setOverCh]   = useState(null)
+  const [dragL, setDragL]     = useState(null) // { chId, idx }
+  const [overL, setOverL]     = useState(null) // { chId, idx }
   const [savingCh, setSavingCh] = useState(false)
   const [savingL, setSavingL]   = useState(false)
   const [chErrors, setChErrors] = useState({})
@@ -717,6 +721,29 @@ function ModuleManagement({ chapters, setChapters }) {
 
   const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
 
+  const handleChDrop = async (toIdx) => {
+    if (dragCh === null || dragCh === toIdx) { setDragCh(null); setOverCh(null); return }
+    const arr = [...chapters]
+    const [moved] = arr.splice(dragCh, 1)
+    arr.splice(toIdx, 0, moved)
+    setChapters(arr)
+    setDragCh(null); setOverCh(null)
+    try { await api.reorderChapters(arr.map(c => c.id)) } catch {}
+  }
+
+  const handleLDrop = async (ch, toIdx) => {
+    if (!dragL || dragL.chId !== ch.id || dragL.idx === toIdx) { setDragL(null); setOverL(null); return }
+    const arr = [...chapters]
+    const chIdx = arr.findIndex(c => c.id === ch.id)
+    const lessons = [...arr[chIdx].lessons]
+    const [moved] = lessons.splice(dragL.idx, 1)
+    lessons.splice(toIdx, 0, moved)
+    arr[chIdx] = { ...arr[chIdx], lessons }
+    setChapters(arr)
+    setDragL(null); setOverL(null)
+    try { await api.reorderLessons(ch.id, lessons.map(l => l.id)) } catch {}
+  }
+
   const saveCh = async () => {
     const errs = {}
     if (!chForm.title.trim()) errs.title = 'Tên chương không được để trống'
@@ -784,9 +811,17 @@ function ModuleManagement({ chapters, setChapters }) {
 
       <div className="space-y-3">
         {chapters.map((ch, ci) => (
-          <DarkCard key={ch.id} className="!p-0 overflow-hidden">
+          <div key={ch.id}
+            draggable
+            onDragStart={() => setDragCh(ci)}
+            onDragOver={e => { e.preventDefault(); setOverCh(ci) }}
+            onDrop={e => { e.preventDefault(); handleChDrop(ci) }}
+            onDragEnd={() => { setDragCh(null); setOverCh(null) }}
+            style={{ opacity: dragCh === ci ? 0.4 : 1, outline: overCh === ci && dragCh !== ci ? '2px solid rgba(59,130,246,0.5)' : 'none', borderRadius: '16px', transition: 'opacity 0.15s' }}>
+          <DarkCard className="!p-0 overflow-hidden">
             {/* Chapter header */}
             <div className="flex items-center gap-3 px-4 py-3">
+              <GripVertical size={14} className="text-slate-700 cursor-grab flex-shrink-0 select-none"/>
               <button className="flex flex-1 items-center gap-3 text-left min-w-0"
                 onClick={()=>setOpenCh(p=>({...p,[ch.id]:!p[ch.id]}))}>
                 <div className={`h-7 w-7 flex-shrink-0 rounded-xl flex items-center justify-center text-[11px] font-bold text-white ${chColors[ci]||'bg-slate-500'}`}>
@@ -799,7 +834,7 @@ function ModuleManagement({ chapters, setChapters }) {
                 {openCh[ch.id] ? <ChevronUp size={14} className="text-slate-600 flex-shrink-0"/> : <ChevronDown size={14} className="text-slate-600 flex-shrink-0"/>}
               </button>
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                <button onClick={()=>{setLForm({title:'',duration:'',free:false,videoUrl:''});setLModal({mode:'add',ch})}}
+                <button onClick={()=>{setLForm({title:'',duration:'',free:false,videoUrl:'',keyPoints:'',content:'',tags:''});setLModal({mode:'add',ch})}}
                   className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-[12px] text-slate-400 hover:text-white transition-all">
                   <Plus size={11}/> Thêm bài
                 </button>
@@ -832,22 +867,33 @@ function ModuleManagement({ chapters, setChapters }) {
                     {ch.lessons.length === 0 ? (
                       <p className="px-5 py-4 text-[13px] text-slate-600">
                         Chưa có bài học.{' '}
-                        <button onClick={()=>{setLForm({title:'',duration:'',free:false,videoUrl:''});setLModal({mode:'add',ch})}}
+                        <button onClick={()=>{setLForm({title:'',duration:'',free:false,videoUrl:'',keyPoints:'',content:'',tags:''});setLModal({mode:'add',ch})}}
                           className="text-blue-400 hover:underline">Thêm bài học</button>
                       </p>
                     ) : (
                       <table className="w-full text-[13px]">
                         <thead>
                           <tr style={{ borderBottom:`1px solid ${T.border}` }}>
-                            {['#','Tên bài học','Thời lượng','Video','Loại',''].map(h=>(
+                            {['','#','Tên bài học','Thời lượng','Video','Loại',''].map(h=>(
                               <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600">{h}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
                           {ch.lessons.map((l, li) => (
-                            <tr key={l.id} className="hover:bg-white/[0.02] transition-colors"
-                              style={{ borderBottom: li < ch.lessons.length-1 ? `1px solid ${T.border}` : 'none' }}>
+                            <tr key={l.id}
+                              draggable
+                              onDragStart={() => setDragL({ chId: ch.id, idx: li })}
+                              onDragOver={e => { e.preventDefault(); setOverL({ chId: ch.id, idx: li }) }}
+                              onDrop={e => { e.preventDefault(); handleLDrop(ch, li) }}
+                              onDragEnd={() => { setDragL(null); setOverL(null) }}
+                              className="transition-colors"
+                              style={{
+                                borderBottom: li < ch.lessons.length-1 ? `1px solid ${T.border}` : 'none',
+                                opacity: dragL?.chId === ch.id && dragL?.idx === li ? 0.4 : 1,
+                                background: overL?.chId === ch.id && overL?.idx === li && !(dragL?.chId === ch.id && dragL?.idx === li) ? 'rgba(59,130,246,0.07)' : undefined,
+                              }}>
+                              <td className="px-2 py-2.5"><GripVertical size={12} className="text-slate-700 cursor-grab select-none"/></td>
                               <td className="px-4 py-2.5 text-slate-600">{li+1}</td>
                               <td className="px-4 py-2.5 text-slate-200 font-medium">{l.title}</td>
                               <td className="px-4 py-2.5">
@@ -897,6 +943,7 @@ function ModuleManagement({ chapters, setChapters }) {
               )}
             </AnimatePresence>
           </DarkCard>
+          </div>
         ))}
       </div>
 

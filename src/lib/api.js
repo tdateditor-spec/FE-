@@ -65,9 +65,11 @@ export const api = {
   addChapter:    (data) => request('POST', '/api/courses/chapters', data),
   updateChapter: (cid, data) => request('PUT', `/api/courses/chapters/${cid}`, data),
   deleteChapter: (cid) => request('DELETE', `/api/courses/chapters/${cid}`),
-  addLesson:     (cid, data) => request('POST', `/api/courses/chapters/${cid}/lessons`, data),
-  updateLesson:  (cid, lid, data) => request('PUT', `/api/courses/chapters/${cid}/lessons/${lid}`, data),
-  deleteLesson:  (cid, lid) => request('DELETE', `/api/courses/chapters/${cid}/lessons/${lid}`),
+  addLesson:       (cid, data)       => request('POST',   `/api/courses/chapters/${cid}/lessons`, data),
+  updateLesson:    (cid, lid, data)  => request('PUT',    `/api/courses/chapters/${cid}/lessons/${lid}`, data),
+  deleteLesson:    (cid, lid)        => request('DELETE', `/api/courses/chapters/${cid}/lessons/${lid}`),
+  reorderChapters: (order)           => request('PUT',    '/api/courses/chapters/reorder', { order }),
+  reorderLessons:  (cid, order)      => request('PUT',    `/api/courses/chapters/${cid}/lessons/reorder`, { order }),
 
   // Users (phân trang)
   getUsers: ({ page = 1, limit = 10, search = '', status = '' } = {}) => {
