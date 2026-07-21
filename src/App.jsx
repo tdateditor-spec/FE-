@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Toaster } from 'sonner'
 import { api } from './lib/api'
 import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
@@ -137,6 +138,7 @@ export default function App() {
 
   return (
     <div className="bg-mesh min-h-screen">
+      <Toaster position="bottom-right" richColors theme="dark" />
       <Navbar onCTA={openModal} onLogin={goLogin} />
       <main>
         <Hero onCTA={openModal} />

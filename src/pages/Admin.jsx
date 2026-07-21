@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast, Toaster } from 'sonner'
 import { api } from '../lib/api'
 import { useQuery, useMutation, useQueryClient, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -278,7 +279,6 @@ function UserManagement() {
   const [form, setForm]         = useState({ name:'', email:'', phone:'', status:'active', paid:false })
   const [formError, setFormError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
-  const [toast, setToast]       = useState(null)
   const [actionId, setActionId] = useState(null)
 
   const queryKey = ['users', curPage, PAGE_SIZE, search, statusFilter]
@@ -295,14 +295,12 @@ function UserManagement() {
     return () => clearTimeout(t)
   }, [searchInput])
 
-  const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 4000) }
-
   const addUserMutation = useMutation({
     mutationFn: (data) => api.addUser(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       setModal(null)
-      showToast('success', `✅ Đã tạo tài khoản & gửi email tới ${form.email}`)
+      toast.success(`Đã tạo tài khoản & gửi email tới ${form.email}`)
     },
     onError: (err) => {
       const msg = err.message || ''
@@ -318,20 +316,25 @@ function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       setModal(null)
-      showToast('success', 'Cập nhật học viên thành công')
+      toast.success('Cập nhật học viên thành công')
     },
     onError: (err) => setFormError(err.message || 'Có lỗi xảy ra'),
   })
 
   const deleteUserMutation = useMutation({
     mutationFn: (id) => api.deleteUser(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); toast.success('Đã xoá học viên') },
+    onError: () => toast.error('Xoá học viên thất bại'),
     onSettled: () => { setDel(null); setActionId(null) },
   })
 
   const toggleLockMutation = useMutation({
     mutationFn: ({ id, status }) => api.updateUser(id, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast.success(status === 'inactive' ? 'Đã khoá học viên' : 'Đã mở khoá học viên')
+    },
+    onError: () => toast.error('Thao tác thất bại'),
     onSettled: () => setActionId(null),
   })
 
@@ -522,21 +525,6 @@ function UserManagement() {
           )}
         </div>
       </DarkCard>
-
-      <AnimatePresence>
-        {toast && (
-          <motion.div initial={{ opacity:0, y:24, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }}
-            exit={{ opacity:0, y:12, scale:0.97 }} transition={{ duration:0.2 }}
-            className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-2xl"
-            style={{
-              background: toast.type==='success' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
-              borderColor: toast.type==='success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)',
-            }}>
-            <span className="text-[13px] font-medium" style={{ color: toast.type==='success' ? '#34d399' : '#f87171' }}>{toast.msg}</span>
-            <button onClick={()=>setToast(null)} className="text-slate-600 hover:text-white transition-colors ml-1"><X size={13}/></button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {modal && (
@@ -806,22 +794,27 @@ function ModuleManagement() {
     onSuccess: (ch) => {
       queryClient.setQueryData(['chapters'], old => [...(old || []), { ...ch, lessons: [] }])
       setChModal(null)
+      toast.success('Đã thêm chương mới')
     },
+    onError: () => toast.error('Thêm chương thất bại'),
   })
   const updateChMutation = useMutation({
     mutationFn: ({ cid, data }) => api.updateChapter(cid, data),
     onSuccess: (updated, { cid }) => {
       queryClient.setQueryData(['chapters'], old => (old || []).map(c => c.id === cid ? { ...c, ...updated } : c))
       setChModal(null)
+      toast.success('Đã cập nhật chương')
     },
+    onError: () => toast.error('Cập nhật chương thất bại'),
   })
   const deleteChMutation = useMutation({
     mutationFn: (cid) => api.deleteChapter(cid),
     onSuccess: (_, cid) => {
       queryClient.setQueryData(['chapters'], old => (old || []).filter(c => c.id !== cid))
       setDelCh(null); setActionId(null)
+      toast.success('Đã xoá chương')
     },
-    onError: () => setActionId(null),
+    onError: () => { setActionId(null); toast.error('Xoá chương thất bại') },
   })
   const addLessonMutation = useMutation({
     mutationFn: ({ cid, data }) => api.addLesson(cid, data),
@@ -830,7 +823,9 @@ function ModuleManagement() {
         (old || []).map(c => c.id === cid ? { ...c, lessons: [...c.lessons, lesson] } : c)
       )
       setLModal(null)
+      toast.success('Đã thêm bài học')
     },
+    onError: () => toast.error('Thêm bài học thất bại'),
   })
   const updateLessonMutation = useMutation({
     mutationFn: ({ cid, lid, data }) => api.updateLesson(cid, lid, data),
@@ -839,7 +834,9 @@ function ModuleManagement() {
         (old || []).map(c => c.id === cid ? { ...c, lessons: c.lessons.map(l => l.id === lid ? lesson : l) } : c)
       )
       setLModal(null)
+      toast.success('Đã cập nhật bài học')
     },
+    onError: () => toast.error('Cập nhật bài học thất bại'),
   })
   const deleteLessonMutation = useMutation({
     mutationFn: ({ cid, lid }) => api.deleteLesson(cid, lid),
@@ -848,8 +845,9 @@ function ModuleManagement() {
         (old || []).map(c => c.id === cid ? { ...c, lessons: c.lessons.filter(l => l.id !== lid) } : c)
       )
       setDelL(null); setActionId(null)
+      toast.success('Đã xoá bài học')
     },
-    onError: () => setActionId(null),
+    onError: () => { setActionId(null); toast.error('Xoá bài học thất bại') },
   })
 
   /* ── YouTube meta detection ─── */
@@ -1167,6 +1165,7 @@ function AdminInner({ onBack, onLogout }) {
 
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ background: T.bg, fontFamily:'Inter,sans-serif' }}>
+      <Toaster position="bottom-right" richColors theme="dark" />
 
       {/* Sidebar */}
       <aside className="flex flex-col w-[240px] flex-shrink-0" style={{ background: T.sidebar, borderRight:`1px solid ${T.border}` }}>
