@@ -105,15 +105,22 @@ export function Pillars() {
           </p>
         </motion.div>
 
-        {/* Image */}
+        {/* Images grid */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mt-8 rounded-2xl overflow-hidden"
+          className="mt-8 flex gap-3 justify-center"
         >
-          <img src="/2.jpg" alt="" className="w-full max-w-sm mx-auto aspect-[3/4] object-cover object-top rounded-2xl" />
+          {['thong ck 1.png','thong ck 2.png','thong ck 3.png','thong ck 4.png'].map((src, i) => (
+            <img
+              key={i}
+              src={`/${src}`}
+              alt=""
+              className="w-1/4 rounded-2xl object-cover shadow-lg"
+            />
+          ))}
         </motion.div>
 
         {/* Cards */}
