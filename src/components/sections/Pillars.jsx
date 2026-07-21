@@ -113,7 +113,7 @@ export function Pillars() {
           transition={{ duration: 0.6 }}
           className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3"
         >
-          {['thong ck 1.png','thong ck 2.png','thong ck 3.png','thong ck 4.png'].map((src, i) => (
+          {['fix 1.png','fix 2.png','fix 3.png','fix 4.png'].map((src, i) => (
             <img
               key={i}
               src={`/${src}`}

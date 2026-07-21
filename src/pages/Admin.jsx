@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { api } from '../lib/api'
+import { useQuery, useMutation, useQueryClient, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   LayoutDashboard, Users, BookOpen, LogOut,
   ArrowLeft, Plus, Search, Edit2, Trash2,
@@ -12,15 +16,19 @@ import {
   GraduationCap, ShieldCheck, GripVertical,
 } from 'lucide-react'
 
-/* ─── Theme tokens (matching Dashboard) ─────────────────────────────────── */
+const adminQueryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+})
+
+/* ─── Theme tokens ───────────────────────────────────────────────────────── */
 const T = {
-  bg:       '#0f1117',
-  sidebar:  '#141520',
-  card:     '#1a1d2e',
-  border:   'rgba(255,255,255,0.07)',
-  text:     '#f1f5f9',
-  muted:    '#64748b',
-  dim:      '#334155',
+  bg:      '#0f1117',
+  sidebar: '#141520',
+  card:    '#1a1d2e',
+  border:  'rgba(255,255,255,0.07)',
+  text:    '#f1f5f9',
+  muted:   '#64748b',
+  dim:     '#334155',
 }
 
 /* ─── Shared UI primitives ───────────────────────────────────────────────── */
@@ -72,7 +80,6 @@ function DarkBadge({ children, color = 'slate' }) {
   )
 }
 
-/* Modal overlay — dùng createPortal để tránh stacking context issues */
 function Modal({ open, onClose, title, children, maxW = '420px' }) {
   useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose() }
@@ -135,7 +142,17 @@ function FormField({ label, children, hint }) {
 }
 
 /* ─── Overview ───────────────────────────────────────────────────────────── */
-function Overview({ users, chapters }) {
+function Overview() {
+  const { data: chapters = [] } = useQuery({
+    queryKey: ['chapters'],
+    queryFn: () => api.getCourses().then(d => d.chapters || []),
+  })
+  const { data: usersData } = useQuery({
+    queryKey: ['users', 1, 10, '', ''],
+    queryFn: () => api.getUsers({ page: 1, limit: 10 }),
+  })
+  const users = usersData?.data || []
+
   const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
   const paid         = users.filter(u=>u.paid).length
   const active       = users.filter(u=>u.status==='active').length
@@ -163,7 +180,6 @@ function Overview({ users, chapters }) {
         </button>
       </div>
 
-      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map(({ title, value, sub, icon:Icon, color, up }) => (
           <DarkCard key={title}>
@@ -180,10 +196,7 @@ function Overview({ users, chapters }) {
         ))}
       </div>
 
-      {/* Lower section */}
       <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-
-        {/* Chapter progress — col 4 */}
         <DarkCard className="lg:col-span-4">
           <p className="text-[13px] font-semibold text-white mb-1">Tiến độ theo chương</p>
           <p className="text-[12px] text-slate-500 mb-4">Phân tích bài học & video</p>
@@ -225,7 +238,6 @@ function Overview({ users, chapters }) {
           </div>
         </DarkCard>
 
-        {/* Recent users — col 3 */}
         <DarkCard className="lg:col-span-3">
           <p className="text-[13px] font-semibold text-white mb-1">Học viên gần đây</p>
           <p className="text-[12px] text-slate-500 mb-4">{users.length} học viên đã đăng ký</p>
@@ -255,50 +267,73 @@ function Overview({ users, chapters }) {
 /* ─── User Management ────────────────────────────────────────────────────── */
 function UserManagement() {
   const PAGE_SIZE = 10
+  const queryClient = useQueryClient()
 
-  const [data, setData]        = useState([])
-  const [pagination, setPag]   = useState({ page:1, totalPages:1, total:0, hasNext:false, hasPrev:false })
-  const [loading, setLoading]  = useState(true)
-  const [search, setSearch]    = useState('')
+  const [curPage, setCurPage]   = useState(1)
+  const [search, setSearch]     = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [modal, setModal]      = useState(null)
-  const [confirmDel, setDel]   = useState(null)
-  const [saving, setSaving]    = useState(false)
+  const [modal, setModal]       = useState(null)
+  const [confirmDel, setDel]    = useState(null)
+  const [form, setForm]         = useState({ name:'', email:'', phone:'', status:'active', paid:false })
   const [formError, setFormError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
-  const [toast, setToast]      = useState(null) // { type: 'success'|'error', msg }
-  const [actionId, setActionId] = useState(null) // id đang xử lý (edit/delete/lock)
-  const [form, setForm]        = useState({ name:'', email:'', phone:'', status:'active', paid:false })
+  const [toast, setToast]       = useState(null)
+  const [actionId, setActionId] = useState(null)
 
-  const showToast = (type, msg) => {
-    setToast({ type, msg })
-    setTimeout(() => setToast(null), 4000)
-  }
+  const queryKey = ['users', curPage, PAGE_SIZE, search, statusFilter]
 
-  const load = async (page = 1, q = search, st = statusFilter) => {
-    setLoading(true)
-    try {
-      const res = await api.getUsers({ page, limit: PAGE_SIZE, search: q, status: st })
-      setData(res.data || [])
-      setPag(res.pagination || { page:1, totalPages:1, total:0 })
-    } catch {}
-    setLoading(false)
-  }
+  const { data: usersData, isLoading } = useQuery({
+    queryKey,
+    queryFn: () => api.getUsers({ page: curPage, limit: PAGE_SIZE, search, status: statusFilter }),
+  })
+  const data       = usersData?.data || []
+  const pagination = usersData?.pagination || { page:1, totalPages:1, total:0, hasNext:false, hasPrev:false }
 
-  useEffect(() => { load(1) }, [])
-
-  // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => { setSearch(searchInput); load(1, searchInput, statusFilter) }, 400)
+    const t = setTimeout(() => { setSearch(searchInput); setCurPage(1) }, 400)
     return () => clearTimeout(t)
   }, [searchInput])
 
-  const onStatusFilter = v => { setStatusFilter(v); load(1, search, v) }
-  const goPage = p => load(p, search, statusFilter)
+  const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 4000) }
 
-  const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setFormError(''); setFieldErrors({}); setModal('add') }
-  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid }); setFormError(''); setFieldErrors({}); setModal(u) }
+  const addUserMutation = useMutation({
+    mutationFn: (data) => api.addUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      setModal(null)
+      showToast('success', `✅ Đã tạo tài khoản & gửi email tới ${form.email}`)
+    },
+    onError: (err) => {
+      const msg = err.message || ''
+      if (msg.includes('đã tồn tại') || msg.includes('already') || msg.includes('409'))
+        setFormError('⚠️ Email này đã tồn tại trong hệ thống.')
+      else
+        setFormError(msg || 'Có lỗi xảy ra, vui lòng thử lại.')
+    },
+  })
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, data }) => api.updateUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      setModal(null)
+      showToast('success', 'Cập nhật học viên thành công')
+    },
+    onError: (err) => setFormError(err.message || 'Có lỗi xảy ra'),
+  })
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (id) => api.deleteUser(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSettled: () => { setDel(null); setActionId(null) },
+  })
+
+  const toggleLockMutation = useMutation({
+    mutationFn: ({ id, status }) => api.updateUser(id, { status }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSettled: () => setActionId(null),
+  })
 
   const validateUserForm = () => {
     const errs = {}
@@ -309,46 +344,25 @@ function UserManagement() {
     return errs
   }
 
-  const save = async () => {
+  const save = () => {
     const errs = validateUserForm()
     if (Object.keys(errs).length) { setFieldErrors(errs); return }
-    setFieldErrors({})
-    setFormError('')
-    setSaving(true)
-    try {
-      if (modal === 'add') {
-        await api.addUser(form)
-        setModal(null)
-        load(pagination.page)
-        showToast('success', `✅ Đã tạo tài khoản & gửi email tới ${form.email}`)
-      } else {
-        await api.updateUser(modal.id, form)
-        setModal(null)
-        load(pagination.page)
-        showToast('success', 'Cập nhật học viên thành công')
-      }
-    } catch (err) {
-      const msg = err.message || ''
-      if (msg.includes('đã tồn tại') || msg.includes('already') || msg.includes('409')) {
-        setFormError('⚠️ Email này đã tồn tại trong hệ thống.')
-      } else {
-        setFormError(msg || 'Có lỗi xảy ra, vui lòng thử lại.')
-      }
-    } finally { setSaving(false) }
+    setFieldErrors({}); setFormError('')
+    if (modal === 'add') addUserMutation.mutate(form)
+    else updateUserMutation.mutate({ id: modal.id, data: form })
   }
 
-  const del = async id => {
-    setActionId(id)
-    try { await api.deleteUser(id) } catch {}
-    setDel(null); setActionId(null); load(pagination.page)
-  }
+  const del = (id) => { setActionId(id); deleteUserMutation.mutate(id) }
 
-  const toggleLock = async u => {
+  const toggleLock = (u) => {
     setActionId(u.id)
-    const newStatus = u.status === 'inactive' ? 'active' : 'inactive'
-    try { await api.updateUser(u.id, { status: newStatus }) } catch {}
-    setActionId(null); load(pagination.page)
+    toggleLockMutation.mutate({ id: u.id, status: u.status === 'inactive' ? 'active' : 'inactive' })
   }
+
+  const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setFormError(''); setFieldErrors({}); setModal('add') }
+  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid }); setFormError(''); setFieldErrors({}); setModal(u) }
+  const onStatusFilter = v => { setStatusFilter(v); setCurPage(1) }
+  const saving = addUserMutation.isPending || updateUserMutation.isPending
 
   const statusMap = {
     active:   { label:'Đang học',  color:'green'  },
@@ -358,7 +372,6 @@ function UserManagement() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">Học viên</h1>
@@ -373,7 +386,6 @@ function UserManagement() {
       </div>
 
       <DarkCard className="!p-0 overflow-hidden">
-        {/* Toolbar */}
         <div className="flex items-center gap-3 px-4 py-3 flex-wrap" style={{ borderBottom:`1px solid ${T.border}` }}>
           <div className="relative flex-1 min-w-[180px]">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"/>
@@ -390,9 +402,8 @@ function UserManagement() {
           </select>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="h-5 w-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"/>
             </div>
@@ -445,9 +456,7 @@ function UserManagement() {
                             {u.courses.includes('music')  && <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">Music</span>}
                             {u.courses.includes('plugin') && <span className="rounded-md bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-violet-400">Plugin</span>}
                           </div>
-                        ) : (
-                          <span className="text-[11px] text-slate-600">—</span>
-                        )}
+                        ) : <span className="text-[11px] text-slate-600">—</span>}
                       </td>
                       <td className="px-4 py-3 text-slate-600 text-[12px]">{u.join_date || '—'}</td>
                       <td className="px-4 py-3">
@@ -483,18 +492,15 @@ function UserManagement() {
           )}
         </div>
 
-        {/* Pagination — luôn hiển thị */}
         <div className="flex items-center justify-between px-4 py-3" style={{ borderTop:`1px solid ${T.border}` }}>
           <p className="text-[12px] text-slate-500">
             Hiển thị <span className="text-white font-medium">{data.length}</span> / <span className="text-white font-medium">{pagination.total || data.length}</span> học viên
           </p>
           {pagination.totalPages > 1 && (
             <div className="flex items-center gap-1.5">
-              <button onClick={()=>goPage(pagination.page-1)} disabled={!pagination.hasPrev}
-                className="h-7 px-3 rounded-xl text-[12px] border transition-all disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-white hover:bg-white/[0.06]"
-                style={{ borderColor: T.border }}>
-                ← Trước
-              </button>
+              <button onClick={()=>setCurPage(p=>p-1)} disabled={!pagination.hasPrev}
+                className="h-7 px-3 rounded-xl text-[12px] border transition-all disabled:opacity-30 text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                style={{ borderColor: T.border }}>← Trước</button>
               {Array.from({ length: pagination.totalPages }, (_,i) => i+1)
                 .filter(p => p === 1 || p === pagination.totalPages || Math.abs(p - pagination.page) <= 1)
                 .reduce((acc, p, idx, arr) => {
@@ -503,53 +509,39 @@ function UserManagement() {
                 }, [])
                 .map((p, i) => p === '...'
                   ? <span key={`e${i}`} className="text-[12px] text-slate-600 px-1">…</span>
-                  : <button key={p} onClick={()=>goPage(p)}
+                  : <button key={p} onClick={()=>setCurPage(p)}
                       className={`h-7 w-7 rounded-xl text-[12px] font-medium transition-all ${
-                        p === pagination.page
-                          ? 'bg-blue-600 text-white'
-                          : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                        p === pagination.page ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
                       }`}>{p}</button>
                 )
               }
-              <button onClick={()=>goPage(pagination.page+1)} disabled={!pagination.hasNext}
-                className="h-7 px-3 rounded-xl text-[12px] border transition-all disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-white hover:bg-white/[0.06]"
-                style={{ borderColor: T.border }}>
-                Tiếp →
-              </button>
+              <button onClick={()=>setCurPage(p=>p+1)} disabled={!pagination.hasNext}
+                className="h-7 px-3 rounded-xl text-[12px] border transition-all disabled:opacity-30 text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                style={{ borderColor: T.border }}>Tiếp →</button>
             </div>
           )}
         </div>
       </DarkCard>
 
-      {/* Toast notification */}
       <AnimatePresence>
         {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.97 }}
-            transition={{ duration: 0.2 }}
+          <motion.div initial={{ opacity:0, y:24, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }}
+            exit={{ opacity:0, y:12, scale:0.97 }} transition={{ duration:0.2 }}
             className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-2xl"
             style={{
-              background: toast.type === 'success' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
-              borderColor: toast.type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)',
-            }}
-          >
-            <span className="text-[13px] font-medium" style={{ color: toast.type === 'success' ? '#34d399' : '#f87171' }}>
-              {toast.msg}
-            </span>
-            <button onClick={() => setToast(null)} className="text-slate-600 hover:text-white transition-colors ml-1">
-              <X size={13}/>
-            </button>
+              background: toast.type==='success' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+              borderColor: toast.type==='success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)',
+            }}>
+            <span className="text-[13px] font-medium" style={{ color: toast.type==='success' ? '#34d399' : '#f87171' }}>{toast.msg}</span>
+            <button onClick={()=>setToast(null)} className="text-slate-600 hover:text-white transition-colors ml-1"><X size={13}/></button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Add / Edit modal */}
       <AnimatePresence>
         {modal && (
           <Modal open={!!modal} onClose={()=>{ setModal(null); setFormError('') }}
-            title={modal === 'add' ? 'Thêm học viên' : 'Chỉnh sửa học viên'}>
+            title={modal==='add' ? 'Thêm học viên' : 'Chỉnh sửa học viên'}>
             <div className="space-y-4">
               <FormField label="Họ tên *">
                 <DarkInput value={form.name} error={!!fieldErrors.name}
@@ -585,21 +577,14 @@ function UserManagement() {
                 </div>
                 <span className="text-[13px] text-slate-300">Đã thanh toán</span>
               </label>
-
-              {/* Form error */}
               {formError && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5"
-                >
+                <motion.div initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }}
+                  className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5">
                   <AlertTriangle size={13} className="text-red-400 flex-shrink-0"/>
                   <p className="text-[12px] text-red-400">{formError}</p>
                 </motion.div>
               )}
-
-              {/* Info: email will be sent */}
-              {modal === 'add' && !formError && (
+              {modal==='add' && !formError && (
                 <div className="flex items-center gap-2 rounded-xl border border-blue-500/15 bg-blue-500/[0.06] px-3 py-2.5">
                   <Check size={12} className="text-blue-400 flex-shrink-0"/>
                   <p className="text-[12px] text-blue-400">Mật khẩu tạm sẽ được gửi tự động tới email học viên.</p>
@@ -612,7 +597,6 @@ function UserManagement() {
         )}
       </AnimatePresence>
 
-      {/* Delete confirm */}
       <AnimatePresence>
         {confirmDel && (
           <Modal open={!!confirmDel} onClose={()=>setDel(null)} title="Xoá học viên" maxW="360px">
@@ -627,28 +611,248 @@ function UserManagement() {
   )
 }
 
+/* ─── Sortable lesson row (dnd-kit) ─────────────────────────────────────── */
+function SortableLessonRow({ lesson: l, li, totalLessons, onEdit, onDelete, actionId }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: l.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    borderBottom: li < totalLessons - 1 ? `1px solid ${T.border}` : 'none',
+  }
+
+  return (
+    <tr ref={setNodeRef} style={style} className="transition-colors">
+      <td className="px-2 py-2.5">
+        <GripVertical size={12} className="text-slate-700 cursor-grab select-none" {...attributes} {...listeners}/>
+      </td>
+      <td className="px-4 py-2.5 text-slate-600">{li+1}</td>
+      <td className="px-4 py-2.5 text-slate-200 font-medium">{l.title}</td>
+      <td className="px-4 py-2.5">
+        <span className="flex items-center gap-1 text-[11px] text-slate-600">
+          <Clock size={10}/>{l.duration}
+        </span>
+      </td>
+      <td className="px-4 py-2.5">
+        {l.videoUrl
+          ? <DarkBadge color="blue"><Video size={9}/>Có video</DarkBadge>
+          : <span className="text-[11px] text-slate-600">Chưa có</span>
+        }
+      </td>
+      <td className="px-4 py-2.5">
+        <DarkBadge color={l.free ? 'green' : 'slate'}>{l.free ? 'Miễn phí' : 'Trả phí'}</DarkBadge>
+      </td>
+      <td className="px-4 py-2.5">
+        <div className="flex items-center justify-end gap-1">
+          {actionId === `l-${l.id}` ? (
+            <svg className="animate-spin h-3.5 w-3.5 text-blue-400 mx-1" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+          ) : (
+            <>
+              <button onClick={()=>onEdit(l)}
+                className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
+                <Edit2 size={11}/>
+              </button>
+              <button onClick={()=>onDelete(l)}
+                className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                <Trash2 size={11}/>
+              </button>
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
+  )
+}
+
+/* ─── Sortable chapter card (dnd-kit) ───────────────────────────────────── */
+function SortableChapterItem({ ch, ci, openCh, setOpenCh, onEditCh, onDelCh, onAddLesson, onEditLesson, onDelLesson, actionId, chColors }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ch.id })
+  const queryClient = useQueryClient()
+
+  const lessonSensors = useSensors(useSensor(PointerSensor))
+
+  const handleLessonDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return
+    const oldIdx = ch.lessons.findIndex(l => l.id === active.id)
+    const newIdx = ch.lessons.findIndex(l => l.id === over.id)
+    const newLessons = arrayMove(ch.lessons, oldIdx, newIdx)
+    queryClient.setQueryData(['chapters'], old =>
+      (old || []).map(c => c.id === ch.id ? { ...c, lessons: newLessons } : c)
+    )
+    try { await api.reorderLessons(ch.id, newLessons.map(l => l.id)) } catch {}
+  }
+
+  const c = chColors[ci] || 'bg-slate-500'
+  const divStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
+
+  return (
+    <div ref={setNodeRef} style={divStyle}>
+      <DarkCard className="!p-0 overflow-hidden">
+        {/* Chapter header */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <GripVertical size={14} className="text-slate-700 cursor-grab flex-shrink-0 select-none" {...attributes} {...listeners}/>
+          <button className="flex flex-1 items-center gap-3 text-left min-w-0"
+            onClick={()=>setOpenCh(p=>({...p,[ch.id]:!p[ch.id]}))}>
+            <div className={`h-7 w-7 flex-shrink-0 rounded-xl flex items-center justify-center text-[11px] font-bold text-white ${c}`}>
+              {ci+1}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-white">{ch.title}</p>
+              <p className="text-[11px] text-slate-600 mt-0.5">{ch.description} · {ch.lessons.length} bài</p>
+            </div>
+            {openCh[ch.id]
+              ? <ChevronUp size={14} className="text-slate-600 flex-shrink-0"/>
+              : <ChevronDown size={14} className="text-slate-600 flex-shrink-0"/>
+            }
+          </button>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button onClick={()=>onAddLesson(ch)}
+              className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-[12px] text-slate-400 hover:text-white transition-all">
+              <Plus size={11}/> Thêm bài
+            </button>
+            {actionId === `ch-${ch.id}` ? (
+              <svg className="animate-spin h-4 w-4 text-blue-400 mx-1" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+            ) : (
+              <>
+                <button onClick={()=>onEditCh(ch)}
+                  className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
+                  <Edit2 size={12}/>
+                </button>
+                <button onClick={()=>onDelCh(ch)}
+                  className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                  <Trash2 size={12}/>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Lessons */}
+        <AnimatePresence initial={false}>
+          {openCh[ch.id] && (
+            <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
+              exit={{height:0,opacity:0}} transition={{duration:0.2}} className="overflow-hidden">
+              <div style={{ borderTop:`1px solid ${T.border}` }}>
+                {ch.lessons.length === 0 ? (
+                  <p className="px-5 py-4 text-[13px] text-slate-600">
+                    Chưa có bài học.{' '}
+                    <button onClick={()=>onAddLesson(ch)} className="text-blue-400 hover:underline">Thêm bài học</button>
+                  </p>
+                ) : (
+                  <DndContext sensors={lessonSensors} collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd}>
+                    <SortableContext items={ch.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                      <table className="w-full text-[13px]">
+                        <thead>
+                          <tr style={{ borderBottom:`1px solid ${T.border}` }}>
+                            {['','#','Tên bài học','Thời lượng','Video','Loại',''].map(h=>(
+                              <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ch.lessons.map((l, li) => (
+                            <SortableLessonRow
+                              key={l.id} lesson={l} li={li} totalLessons={ch.lessons.length}
+                              onEdit={l => onEditLesson(ch, l)}
+                              onDelete={l => onDelLesson(ch, l)}
+                              actionId={actionId}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </SortableContext>
+                  </DndContext>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </DarkCard>
+    </div>
+  )
+}
+
 /* ─── Module Management ──────────────────────────────────────────────────── */
-function ModuleManagement({ chapters, setChapters }) {
-  const [openCh, setOpenCh]   = useState({})
-  const [chModal, setChModal] = useState(null)
-  const [lModal, setLModal]   = useState(null)
-  const [delCh, setDelCh]     = useState(null)
-  const [delL, setDelL]       = useState(null)
+function ModuleManagement() {
+  const queryClient = useQueryClient()
+
+  const { data: chapters = [], isLoading } = useQuery({
+    queryKey: ['chapters'],
+    queryFn: () => api.getCourses().then(d => d.chapters || []),
+  })
+
+  const [openCh, setOpenCh]     = useState({})
+  const [chModal, setChModal]   = useState(null)
+  const [lModal, setLModal]     = useState(null)
+  const [delCh, setDelCh]       = useState(null)
+  const [delL, setDelL]         = useState(null)
   const [actionId, setActionId] = useState(null)
-  const [chForm, setChForm]   = useState({ title:'', description:'' })
-  const [lForm, setLForm]     = useState({ title:'', duration:'', free:false, videoUrl:'', keyPoints:'', content:'', tags:'' })
-  const [dragCh, setDragCh]   = useState(null)
-  const [overCh, setOverCh]   = useState(null)
-  const [dragL, setDragL]     = useState(null) // { chId, idx }
-  const [overL, setOverL]     = useState(null) // { chId, idx }
-  const [savingCh, setSavingCh] = useState(false)
-  const [savingL, setSavingL]   = useState(false)
+  const [chForm, setChForm]     = useState({ title:'', description:'' })
+  const [lForm, setLForm]       = useState({ title:'', duration:'', free:false, videoUrl:'', keyPoints:'', content:'', tags:'' })
   const [chErrors, setChErrors] = useState({})
   const [lErrors, setLErrors]   = useState({})
   const [fetchingMeta, setFetchingMeta] = useState(false)
-  const [metaPreview, setMetaPreview]   = useState(null) // { title, duration, thumbnail }
+  const [metaPreview, setMetaPreview]   = useState(null)
 
-  // Auto-detect YouTube metadata qua IFrame API (client-side, không bị chặn)
+  /* ── Mutations ─── */
+  const addChMutation = useMutation({
+    mutationFn: (data) => api.addChapter(data),
+    onSuccess: (ch) => {
+      queryClient.setQueryData(['chapters'], old => [...(old || []), { ...ch, lessons: [] }])
+      setChModal(null)
+    },
+  })
+  const updateChMutation = useMutation({
+    mutationFn: ({ cid, data }) => api.updateChapter(cid, data),
+    onSuccess: (updated, { cid }) => {
+      queryClient.setQueryData(['chapters'], old => (old || []).map(c => c.id === cid ? { ...c, ...updated } : c))
+      setChModal(null)
+    },
+  })
+  const deleteChMutation = useMutation({
+    mutationFn: (cid) => api.deleteChapter(cid),
+    onSuccess: (_, cid) => {
+      queryClient.setQueryData(['chapters'], old => (old || []).filter(c => c.id !== cid))
+      setDelCh(null); setActionId(null)
+    },
+    onError: () => setActionId(null),
+  })
+  const addLessonMutation = useMutation({
+    mutationFn: ({ cid, data }) => api.addLesson(cid, data),
+    onSuccess: (lesson, { cid }) => {
+      queryClient.setQueryData(['chapters'], old =>
+        (old || []).map(c => c.id === cid ? { ...c, lessons: [...c.lessons, lesson] } : c)
+      )
+      setLModal(null)
+    },
+  })
+  const updateLessonMutation = useMutation({
+    mutationFn: ({ cid, lid, data }) => api.updateLesson(cid, lid, data),
+    onSuccess: (lesson, { cid, lid }) => {
+      queryClient.setQueryData(['chapters'], old =>
+        (old || []).map(c => c.id === cid ? { ...c, lessons: c.lessons.map(l => l.id === lid ? lesson : l) } : c)
+      )
+      setLModal(null)
+    },
+  })
+  const deleteLessonMutation = useMutation({
+    mutationFn: ({ cid, lid }) => api.deleteLesson(cid, lid),
+    onSuccess: (_, { cid, lid }) => {
+      queryClient.setQueryData(['chapters'], old =>
+        (old || []).map(c => c.id === cid ? { ...c, lessons: c.lessons.filter(l => l.id !== lid) } : c)
+      )
+      setDelL(null); setActionId(null)
+    },
+    onError: () => setActionId(null),
+  })
+
+  /* ── YouTube meta detection ─── */
   useEffect(() => {
     const url = lForm.videoUrl?.trim()
     if (!url) { setMetaPreview(null); setFetchingMeta(false); return }
@@ -656,7 +860,7 @@ function ModuleManagement({ chapters, setChapters }) {
     if (!videoId) { setMetaPreview(null); setFetchingMeta(false); return }
 
     setFetchingMeta(true)
-    let cancelled = false  // guard tránh setState sau cleanup
+    let cancelled = false
     const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
     const elId = `admin-yt-${videoId}-${Date.now()}`
     const el = document.createElement('div')
@@ -675,27 +879,22 @@ function ModuleManagement({ chapters, setChapters }) {
           playerVars: { autoplay: 0, mute: 1 },
           events: {
             onReady(e) {
-              const cleanup = () => { try { e.target.destroy() } catch (ex) { void ex; } el.remove() }
+              const cleanup = () => { try { e.target.destroy() } catch (ex) { void ex } el.remove() }
               if (cancelled) { cleanup(); return }
-              let dur = null
               try {
                 const secs = e.target.getDuration()
-                dur = secs > 0 ? fmt(secs) : null
+                const dur = secs > 0 ? fmt(secs) : null
                 if (dur && !cancelled) {
                   setMetaPreview({ thumbnail, duration: dur, title: e.target.getVideoData?.()?.title || '', videoId })
                   setLForm(p => ({ ...p, duration: dur }))
                 }
-              } catch (ex) { void ex; }
+              } catch (ex) { void ex }
               if (!cancelled) setFetchingMeta(false)
               cleanup()
             },
           },
         })
-      } catch (ex) {
-        void ex
-        el.remove()
-        if (!cancelled) setFetchingMeta(false)
-      }
+      } catch (ex) { void ex; el.remove(); if (!cancelled) setFetchingMeta(false) }
     }
 
     if (window.YT?.Player) {
@@ -714,87 +913,56 @@ function ModuleManagement({ chapters, setChapters }) {
     return () => {
       cancelled = true
       setFetchingMeta(false)
-      try { player?.destroy() } catch (ex) { void ex; }
+      try { player?.destroy() } catch (ex) { void ex }
       document.getElementById(elId)?.remove()
     }
   }, [lForm.videoUrl])
 
-  const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
+  /* ── Chapter dnd-kit sensors ─── */
+  const chSensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
-  const handleChDrop = async (toIdx) => {
-    if (dragCh === null || dragCh === toIdx) { setDragCh(null); setOverCh(null); return }
-    const arr = [...chapters]
-    const [moved] = arr.splice(dragCh, 1)
-    arr.splice(toIdx, 0, moved)
-    setChapters(arr)
-    setDragCh(null); setOverCh(null)
-    try { await api.reorderChapters(arr.map(c => c.id)) } catch {}
+  const handleChapterDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return
+    const oldIdx = chapters.findIndex(c => c.id === active.id)
+    const newIdx = chapters.findIndex(c => c.id === over.id)
+    const newOrder = arrayMove(chapters, oldIdx, newIdx)
+    queryClient.setQueryData(['chapters'], newOrder)
+    try { await api.reorderChapters(newOrder.map(c => c.id)) } catch {}
   }
 
-  const handleLDrop = async (ch, toIdx) => {
-    if (!dragL || dragL.chId !== ch.id || dragL.idx === toIdx) { setDragL(null); setOverL(null); return }
-    const arr = [...chapters]
-    const chIdx = arr.findIndex(c => c.id === ch.id)
-    const lessons = [...arr[chIdx].lessons]
-    const [moved] = lessons.splice(dragL.idx, 1)
-    lessons.splice(toIdx, 0, moved)
-    arr[chIdx] = { ...arr[chIdx], lessons }
-    setChapters(arr)
-    setDragL(null); setOverL(null)
-    try { await api.reorderLessons(ch.id, lessons.map(l => l.id)) } catch {}
-  }
-
-  const saveCh = async () => {
+  /* ── Handlers ─── */
+  const saveCh = () => {
     const errs = {}
     if (!chForm.title.trim()) errs.title = 'Tên chương không được để trống'
     if (Object.keys(errs).length) { setChErrors(errs); return }
     setChErrors({})
-    setSavingCh(true)
-    try {
-      if (chModal==='add') {
-        const ch = await api.addChapter(chForm)
-        setChapters(p=>[...p, ch])
-      } else {
-        const ch = await api.updateChapter(chModal.id, chForm)
-        setChapters(p=>p.map(c=>c.id===chModal.id?{...c,...ch}:c))
-      }
-    } catch {}
-    setSavingCh(false)
-    setChModal(null)
+    if (chModal === 'add') addChMutation.mutate(chForm)
+    else updateChMutation.mutate({ cid: chModal.id, data: chForm })
   }
-  const doDelCh = async id => {
-    setActionId(`ch-${id}`)
-    try { await api.deleteChapter(id) } catch {}
-    setChapters(p=>p.filter(c=>c.id!==id)); setDelCh(null); setActionId(null)
-  }
-  const saveL = async () => {
+
+  const doDelCh = (id) => { setActionId(`ch-${id}`); deleteChMutation.mutate(id) }
+
+  const saveL = () => {
     const errs = {}
     if (!lForm.title.trim()) errs.title = 'Tên bài học không được để trống'
     if (lForm.duration && !/^\d+:\d{2}$/.test(lForm.duration)) errs.duration = 'Định dạng phải là MM:SS hoặc H:MM (VD: 15:30)'
     if (lForm.videoUrl && !/^https?:\/\/.+/.test(lForm.videoUrl.trim())) errs.videoUrl = 'URL không hợp lệ, phải bắt đầu bằng https://'
     if (Object.keys(errs).length) { setLErrors(errs); return }
     setLErrors({})
-    const {mode, ch, l} = lModal
-    setSavingL(true)
-    try {
-      if (mode==='add') {
-        const lesson = await api.addLesson(ch.id, lForm)
-        setChapters(p=>p.map(c=>c.id===ch.id?{...c,lessons:[...c.lessons,lesson]}:c))
-      } else {
-        const lesson = await api.updateLesson(ch.id, l.id, lForm)
-        setChapters(p=>p.map(c=>c.id===ch.id?{...c,lessons:c.lessons.map(x=>x.id===l.id?lesson:x)}:c))
-      }
-    } catch {}
-    setSavingL(false)
-    setLModal(null)
-  }
-  const doDelL = async ({ch, l}) => {
-    setActionId(`l-${l.id}`)
-    try { await api.deleteLesson(ch.id, l.id) } catch {}
-    setChapters(p=>p.map(c=>c.id===ch.id?{...c,lessons:c.lessons.filter(x=>x.id!==l.id)}:c)); setDelL(null); setActionId(null)
+    const { mode, ch, l } = lModal
+    if (mode === 'add') addLessonMutation.mutate({ cid: ch.id, data: lForm })
+    else updateLessonMutation.mutate({ cid: ch.id, lid: l.id, data: lForm })
   }
 
+  const doDelL = ({ ch, l }) => { setActionId(`l-${l.id}`); deleteLessonMutation.mutate({ cid: ch.id, lid: l.id }) }
+
   const chColors = ['bg-violet-500','bg-blue-500','bg-emerald-500']
+  const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
+  const savingCh = addChMutation.isPending || updateChMutation.isPending
+  const savingL  = addLessonMutation.isPending || updateLessonMutation.isPending
 
   return (
     <div className="space-y-5">
@@ -803,149 +971,37 @@ function ModuleManagement({ chapters, setChapters }) {
           <h1 className="text-xl font-bold text-white">Nội dung khoá học</h1>
           <p className="text-[13px] text-slate-500 mt-0.5">{chapters.length} chương · {totalLessons} bài học</p>
         </div>
-        <button onClick={()=>{setChForm({title:'',description:''});setChModal('add')}}
+        <button onClick={()=>{ setChForm({ title:'', description:'' }); setChModal('add') }}
           className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-[13px] font-semibold text-white transition-all">
           <Plus size={14}/> Thêm chương
         </button>
       </div>
 
-      <div className="space-y-3">
-        {chapters.map((ch, ci) => (
-          <div key={ch.id}
-            draggable
-            onDragStart={() => setDragCh(ci)}
-            onDragOver={e => { e.preventDefault(); setOverCh(ci) }}
-            onDrop={e => { e.preventDefault(); handleChDrop(ci) }}
-            onDragEnd={() => { setDragCh(null); setOverCh(null) }}
-            style={{ opacity: dragCh === ci ? 0.4 : 1, outline: overCh === ci && dragCh !== ci ? '2px solid rgba(59,130,246,0.5)' : 'none', borderRadius: '16px', transition: 'opacity 0.15s' }}>
-          <DarkCard className="!p-0 overflow-hidden">
-            {/* Chapter header */}
-            <div className="flex items-center gap-3 px-4 py-3">
-              <GripVertical size={14} className="text-slate-700 cursor-grab flex-shrink-0 select-none"/>
-              <button className="flex flex-1 items-center gap-3 text-left min-w-0"
-                onClick={()=>setOpenCh(p=>({...p,[ch.id]:!p[ch.id]}))}>
-                <div className={`h-7 w-7 flex-shrink-0 rounded-xl flex items-center justify-center text-[11px] font-bold text-white ${chColors[ci]||'bg-slate-500'}`}>
-                  {ci+1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-white">{ch.title}</p>
-                  <p className="text-[11px] text-slate-600 mt-0.5">{ch.description} · {ch.lessons.length} bài</p>
-                </div>
-                {openCh[ch.id] ? <ChevronUp size={14} className="text-slate-600 flex-shrink-0"/> : <ChevronDown size={14} className="text-slate-600 flex-shrink-0"/>}
-              </button>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <button onClick={()=>{setLForm({title:'',duration:'',free:false,videoUrl:'',keyPoints:'',content:'',tags:''});setLModal({mode:'add',ch})}}
-                  className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-[12px] text-slate-400 hover:text-white transition-all">
-                  <Plus size={11}/> Thêm bài
-                </button>
-                {actionId === `ch-${ch.id}` ? (
-                  <svg className="animate-spin h-4 w-4 text-blue-400 mx-1" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                ) : (
-                  <>
-                    <button onClick={()=>{setChForm({title:ch.title,description:ch.description||''});setChModal(ch)}}
-                      className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
-                      <Edit2 size={12}/>
-                    </button>
-                    <button onClick={()=>setDelCh(ch)}
-                      className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
-                      <Trash2 size={12}/>
-                    </button>
-                  </>
-                )}
-              </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"/>
+        </div>
+      ) : (
+        <DndContext sensors={chSensors} collisionDetection={closestCenter} onDragEnd={handleChapterDragEnd}>
+          <SortableContext items={chapters.map(c => c.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-3">
+              {chapters.map((ch, ci) => (
+                <SortableChapterItem
+                  key={ch.id} ch={ch} ci={ci}
+                  openCh={openCh} setOpenCh={setOpenCh}
+                  chColors={chColors}
+                  actionId={actionId}
+                  onEditCh={ch => { setChForm({ title:ch.title, description:ch.description||'' }); setChModal(ch) }}
+                  onDelCh={ch => setDelCh(ch)}
+                  onAddLesson={ch => { setLForm({ title:'', duration:'', free:false, videoUrl:'', keyPoints:'', content:'', tags:'' }); setLModal({ mode:'add', ch }) }}
+                  onEditLesson={(ch, l) => { setLForm({ title:l.title, duration:l.duration, free:l.free, videoUrl:l.videoUrl||'', keyPoints:l.keyPoints||'', content:l.content||'', tags:l.tags||'' }); setLModal({ mode:'edit', ch, l }) }}
+                  onDelLesson={(ch, l) => setDelL({ ch, l })}
+                />
+              ))}
             </div>
-
-            {/* Lessons */}
-            <AnimatePresence initial={false}>
-              {openCh[ch.id] && (
-                <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
-                  exit={{height:0,opacity:0}} transition={{duration:0.2}} className="overflow-hidden">
-                  <div style={{ borderTop:`1px solid ${T.border}` }}>
-                    {ch.lessons.length === 0 ? (
-                      <p className="px-5 py-4 text-[13px] text-slate-600">
-                        Chưa có bài học.{' '}
-                        <button onClick={()=>{setLForm({title:'',duration:'',free:false,videoUrl:'',keyPoints:'',content:'',tags:''});setLModal({mode:'add',ch})}}
-                          className="text-blue-400 hover:underline">Thêm bài học</button>
-                      </p>
-                    ) : (
-                      <table className="w-full text-[13px]">
-                        <thead>
-                          <tr style={{ borderBottom:`1px solid ${T.border}` }}>
-                            {['','#','Tên bài học','Thời lượng','Video','Loại',''].map(h=>(
-                              <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {ch.lessons.map((l, li) => (
-                            <tr key={l.id}
-                              draggable
-                              onDragStart={() => setDragL({ chId: ch.id, idx: li })}
-                              onDragOver={e => { e.preventDefault(); setOverL({ chId: ch.id, idx: li }) }}
-                              onDrop={e => { e.preventDefault(); handleLDrop(ch, li) }}
-                              onDragEnd={() => { setDragL(null); setOverL(null) }}
-                              className="transition-colors"
-                              style={{
-                                borderBottom: li < ch.lessons.length-1 ? `1px solid ${T.border}` : 'none',
-                                opacity: dragL?.chId === ch.id && dragL?.idx === li ? 0.4 : 1,
-                                background: overL?.chId === ch.id && overL?.idx === li && !(dragL?.chId === ch.id && dragL?.idx === li) ? 'rgba(59,130,246,0.07)' : undefined,
-                              }}>
-                              <td className="px-2 py-2.5"><GripVertical size={12} className="text-slate-700 cursor-grab select-none"/></td>
-                              <td className="px-4 py-2.5 text-slate-600">{li+1}</td>
-                              <td className="px-4 py-2.5 text-slate-200 font-medium">{l.title}</td>
-                              <td className="px-4 py-2.5">
-                                <span className="flex items-center gap-1 text-[11px] text-slate-600">
-                                  <Clock size={10}/>{l.duration}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2.5">
-                                {l.videoUrl
-                                  ? <DarkBadge color="blue"><Video size={9}/>Có video</DarkBadge>
-                                  : <span className="text-[11px] text-slate-600">Chưa có</span>
-                                }
-                              </td>
-                              <td className="px-4 py-2.5">
-                                <DarkBadge color={l.free ? 'green' : 'slate'}>
-                                  {l.free ? 'Miễn phí' : 'Trả phí'}
-                                </DarkBadge>
-                              </td>
-                              <td className="px-4 py-2.5">
-                                <div className="flex items-center justify-end gap-1">
-                                  {actionId === `l-${l.id}` ? (
-                                    <svg className="animate-spin h-3.5 w-3.5 text-blue-400 mx-1" viewBox="0 0 24 24" fill="none">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                                    </svg>
-                                  ) : (
-                                    <>
-                                      <button onClick={()=>{setLForm({title:l.title,duration:l.duration,free:l.free,videoUrl:l.videoUrl||'',keyPoints:l.keyPoints||'',content:l.content||'',tags:l.tags||''});setLModal({mode:'edit',ch,l})}}
-                                        className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-white hover:bg-white/[0.06] transition-all">
-                                        <Edit2 size={11}/>
-                                      </button>
-                                      <button onClick={()=>setDelL({ch,l})}
-                                        className="h-6 w-6 flex items-center justify-center rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
-                                        <Trash2 size={11}/>
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </DarkCard>
-          </div>
-        ))}
-      </div>
+          </SortableContext>
+        </DndContext>
+      )}
 
       {/* Chapter modal */}
       <AnimatePresence>
@@ -963,7 +1019,8 @@ function ModuleManagement({ chapters, setChapters }) {
                 <DarkInput value={chForm.description} onChange={e=>setChForm(p=>({...p,description:e.target.value}))} placeholder="Mô tả ngắn"/>
               </FormField>
             </div>
-            <ModalFooter onCancel={()=>{ setChModal(null); setChErrors({}) }} onConfirm={saveCh} confirmLabel={chModal==='add'?'Thêm chương':'Lưu'} loading={savingCh}/>
+            <ModalFooter onCancel={()=>{ setChModal(null); setChErrors({}) }} onConfirm={saveCh}
+              confirmLabel={chModal==='add' ? 'Thêm chương' : 'Lưu'} loading={savingCh}/>
           </Modal>
         )}
       </AnimatePresence>
@@ -982,12 +1039,10 @@ function ModuleManagement({ chapters, setChapters }) {
                 <FieldError msg={lErrors.title}/>
               </FormField>
               <FormField label="Thời lượng" hint={fetchingMeta ? '⏳ Đang tự động phát hiện...' : ''}>
-                <div className="relative">
-                  <DarkInput value={fetchingMeta ? '' : lForm.duration} error={!!lErrors.duration}
-                    onChange={e=>{ setLForm(p=>({...p,duration:e.target.value})); setLErrors(p=>({...p,duration:''})) }}
-                    placeholder={fetchingMeta ? 'Đang phát hiện thời lượng...' : 'VD: 15:30'}
-                    className={fetchingMeta ? 'opacity-60 cursor-wait' : ''}/>
-                </div>
+                <DarkInput value={fetchingMeta ? '' : lForm.duration} error={!!lErrors.duration}
+                  onChange={e=>{ setLForm(p=>({...p,duration:e.target.value})); setLErrors(p=>({...p,duration:''})) }}
+                  placeholder={fetchingMeta ? 'Đang phát hiện thời lượng...' : 'VD: 15:30'}
+                  className={fetchingMeta ? 'opacity-60 cursor-wait' : ''}/>
                 <FieldError msg={lErrors.duration}/>
               </FormField>
               <FormField label="URL Video" hint={fetchingMeta ? '⏳ Đang lấy thông tin video...' : lForm.videoUrl && !lErrors.videoUrl ? '✓ Đã có URL video' : 'Hỗ trợ YouTube, Vimeo & Drive'}>
@@ -998,7 +1053,7 @@ function ModuleManagement({ chapters, setChapters }) {
                 {metaPreview && (
                   <div className="mt-2 flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/[0.06] p-2.5">
                     {metaPreview.thumbnail && (
-                      <img src={metaPreview.thumbnail} alt="" className="h-12 w-20 rounded-lg object-cover flex-shrink-0" />
+                      <img src={metaPreview.thumbnail} alt="" className="h-12 w-20 rounded-lg object-cover flex-shrink-0"/>
                     )}
                     <div className="min-w-0">
                       <p className="text-[12px] font-medium text-white truncate">{metaPreview.title}</p>
@@ -1008,22 +1063,16 @@ function ModuleManagement({ chapters, setChapters }) {
                 )}
               </FormField>
               <FormField label="Điểm chính trong bài" hint="Mỗi dòng = 1 điểm">
-                <textarea
-                  value={lForm.keyPoints}
-                  onChange={e=>setLForm(p=>({...p,keyPoints:e.target.value}))}
+                <textarea value={lForm.keyPoints} onChange={e=>setLForm(p=>({...p,keyPoints:e.target.value}))}
                   placeholder={"Phân tích ngược từ mục tiêu $1,000\nCách tính rate freelance\nTimeline tuần 1-4"}
                   rows={4}
-                  className="w-full rounded-lg bg-white/[0.04] border border-white/[0.08] px-3 py-2 text-[13px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 resize-none"
-                />
+                  className="w-full rounded-lg bg-white/[0.04] border border-white/[0.08] px-3 py-2 text-[13px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 resize-none"/>
               </FormField>
               <FormField label="Nội dung bài giảng">
-                <textarea
-                  value={lForm.content}
-                  onChange={e=>setLForm(p=>({...p,content:e.target.value}))}
+                <textarea value={lForm.content} onChange={e=>setLForm(p=>({...p,content:e.target.value}))}
                   placeholder="Mô tả nội dung chi tiết bài học..."
                   rows={5}
-                  className="w-full rounded-lg bg-white/[0.04] border border-white/[0.08] px-3 py-2 text-[13px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 resize-none"
-                />
+                  className="w-full rounded-lg bg-white/[0.04] border border-white/[0.08] px-3 py-2 text-[13px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 resize-none"/>
               </FormField>
               <FormField label="Tags" hint="Phân cách bằng dấu phẩy">
                 <DarkInput value={lForm.tags} onChange={e=>setLForm(p=>({...p,tags:e.target.value}))} placeholder="VD: Mindset, Mục tiêu, Freelance"/>
@@ -1039,7 +1088,9 @@ function ModuleManagement({ chapters, setChapters }) {
                 </div>
               </label>
             </div>
-            <ModalFooter onCancel={()=>{ setLModal(null); setLErrors({}) }} onConfirm={saveL} confirmLabel={fetchingMeta ? '⏳ Đang phát hiện...' : lModal.mode==='add'?'Thêm bài học':'Lưu'} loading={savingL || fetchingMeta}/>
+            <ModalFooter onCancel={()=>{ setLModal(null); setLErrors({}) }} onConfirm={saveL}
+              confirmLabel={fetchingMeta ? '⏳ Đang phát hiện...' : lModal.mode==='add' ? 'Thêm bài học' : 'Lưu'}
+              loading={savingL || fetchingMeta}/>
           </Modal>
         )}
       </AnimatePresence>
@@ -1052,7 +1103,8 @@ function ModuleManagement({ chapters, setChapters }) {
               Xoá chương <strong className="text-white">"{delCh.title}"</strong> và{' '}
               <strong className="text-white">{delCh.lessons?.length} bài học</strong> bên trong? Không thể hoàn tác.
             </p>
-            <ModalFooter onCancel={()=>setDelCh(null)} onConfirm={()=>doDelCh(delCh.id)} confirmLabel="Xoá chương" danger/>
+            <ModalFooter onCancel={()=>setDelCh(null)} onConfirm={()=>doDelCh(delCh.id)} confirmLabel="Xoá chương" danger
+              loading={deleteChMutation.isPending}/>
           </Modal>
         )}
       </AnimatePresence>
@@ -1064,7 +1116,8 @@ function ModuleManagement({ chapters, setChapters }) {
             <p className="text-[13px] text-slate-400">
               Xoá bài <strong className="text-white">"{delL.l?.title}"</strong>? Không thể hoàn tác.
             </p>
-            <ModalFooter onCancel={()=>setDelL(null)} onConfirm={()=>doDelL(delL)} confirmLabel="Xoá bài học" danger/>
+            <ModalFooter onCancel={()=>setDelL(null)} onConfirm={()=>doDelL(delL)} confirmLabel="Xoá bài học" danger
+              loading={deleteLessonMutation.isPending}/>
           </Modal>
         )}
       </AnimatePresence>
@@ -1089,15 +1142,10 @@ function getAdminPage() {
 }
 
 /* ─── Admin Shell ────────────────────────────────────────────────────────── */
-export function Admin({ onBack, onLogout }) {
+function AdminInner({ onBack, onLogout }) {
   const [page, setPage]         = useState(getAdminPage)
-  const [users, setUsers]       = useState([])
-  const [chapters, setChapters] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
   const [avatarOpen, setAvatarOpen] = useState(false)
 
-  // Sync với browser back/forward
   useEffect(() => {
     const handler = () => setPage(getAdminPage())
     window.addEventListener('popstate', handler)
@@ -1105,31 +1153,14 @@ export function Admin({ onBack, onLogout }) {
   }, [])
 
   const navigate = (id) => {
-    const path = ROUTE_BY_ID[id] || '/admin'
-    window.history.pushState({}, '', path)
+    window.history.pushState({}, '', ROUTE_BY_ID[id] || '/admin')
     setPage(id)
   }
 
-  const fetchData = () => {
-    setLoading(true)
-    setError(null)
-    const token = localStorage.getItem('vfs_token')
-    if (!token) { onLogout && onLogout(); return }
-    Promise.all([api.getUsers({ page:1, limit:10 }), api.getCourses()])
-      .then(([usersRes, coursesData]) => {
-        setUsers(usersRes.data || [])
-        setChapters(coursesData.chapters || [])
-      })
-      .catch(err => setError(err.message || 'Không thể kết nối server'))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => { fetchData() }, [])
-
   const navItems = [
-    { id:'overview', label:'Dashboard',   icon:LayoutDashboard, group:'GENERAL',    path:'/admin'         },
-    { id:'users',    label:'Học viên',    icon:Users,           group:'MANAGEMENT', path:'/admin/users'   },
-    { id:'modules',  label:'Nội dung',    icon:BookOpen,        group:'MANAGEMENT', path:'/admin/content' },
+    { id:'overview', label:'Dashboard', icon:LayoutDashboard, group:'GENERAL',    path:'/admin'         },
+    { id:'users',    label:'Học viên',  icon:Users,           group:'MANAGEMENT', path:'/admin/users'   },
+    { id:'modules',  label:'Nội dung',  icon:BookOpen,        group:'MANAGEMENT', path:'/admin/content' },
   ]
 
   const groups = ['GENERAL','MANAGEMENT']
@@ -1137,10 +1168,8 @@ export function Admin({ onBack, onLogout }) {
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ background: T.bg, fontFamily:'Inter,sans-serif' }}>
 
-      {/* ── Left sidebar ── */}
+      {/* Sidebar */}
       <aside className="flex flex-col w-[240px] flex-shrink-0" style={{ background: T.sidebar, borderRight:`1px solid ${T.border}` }}>
-
-        {/* Logo */}
         <div className="flex items-center gap-2.5 px-4 py-3.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-600 flex-shrink-0">
             <ShieldCheck size={15} className="text-white"/>
@@ -1151,24 +1180,18 @@ export function Admin({ onBack, onLogout }) {
           </div>
         </div>
 
-        {/* Nav groups */}
         <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
           {groups.map(group => (
             <div key={group}>
               <p className="px-2 mb-1 text-[10px] font-semibold tracking-widest text-slate-600">{group}</p>
-              {navItems.filter(i=>i.group===group).map(({ id, label, icon:Icon, path }) => {
+              {navItems.filter(i=>i.group===group).map(({ id, label, icon:Icon }) => {
                 const active = page === id
                 return (
                   <button key={id} onClick={()=>navigate(id)}
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all mb-0.5"
-                    style={{
-                      background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
-                      color: active ? '#f1f5f9' : '#64748b',
-                    }}
+                    style={{ background: active ? 'rgba(255,255,255,0.08)' : 'transparent', color: active ? '#f1f5f9' : '#64748b' }}
                     onMouseEnter={e=>{ if(!active){ e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#cbd5e1' }}}
-                    onMouseLeave={e=>{ if(!active){ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#64748b' }}}
-                    title={path}
-                  >
+                    onMouseLeave={e=>{ if(!active){ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#64748b' }}}>
                     <Icon size={15}/>{label}
                   </button>
                 )
@@ -1177,7 +1200,6 @@ export function Admin({ onBack, onLogout }) {
           ))}
         </div>
 
-        {/* Bottom */}
         <div className="px-3 py-3 space-y-0.5" style={{ borderTop:`1px solid ${T.border}` }}>
           <button onClick={onBack}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] text-slate-500 hover:text-slate-200 hover:bg-white/[0.04] transition-all">
@@ -1190,61 +1212,42 @@ export function Admin({ onBack, onLogout }) {
         </div>
       </aside>
 
-      {/* ── Main ── */}
+      {/* Main */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-
-        {/* Header */}
         <header className="flex-shrink-0 flex items-center justify-between px-5 py-2.5" style={{ borderBottom:`1px solid ${T.border}`, background: T.bg }}>
           <div className="flex items-center gap-2 text-[12px]">
             <span className="text-slate-600">VFS Admin</span>
             <span className="text-slate-700">/</span>
-            <span className="text-slate-300 font-medium">
-              {navItems.find(i=>i.id===page)?.label || 'Dashboard'}
-            </span>
+            <span className="text-slate-300 font-medium">{navItems.find(i=>i.id===page)?.label || 'Dashboard'}</span>
           </div>
           <div className="flex items-center gap-2">
             <button className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
               <Bell size={15}/>
             </button>
             <div className="h-6 w-px mx-1" style={{ background: T.border }}/>
-            {/* Avatar + Dropdown */}
             <div className="relative">
-              <button
-                onClick={() => setAvatarOpen(v => !v)}
-                className="h-8 w-8 flex items-center justify-center rounded-xl bg-violet-600 text-[11px] font-bold text-white hover:bg-violet-500 transition-all"
-              >
+              <button onClick={() => setAvatarOpen(v => !v)}
+                className="h-8 w-8 flex items-center justify-center rounded-xl bg-violet-600 text-[11px] font-bold text-white hover:bg-violet-500 transition-all">
                 AD
               </button>
               <AnimatePresence>
                 {avatarOpen && (
                   <>
-                    {/* Backdrop */}
-                    <div className="fixed inset-0 z-40" onClick={() => setAvatarOpen(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -6 }}
-                      transition={{ duration: 0.15 }}
+                    <div className="fixed inset-0 z-40" onClick={() => setAvatarOpen(false)}/>
+                    <motion.div initial={{ opacity:0, scale:0.95, y:-6 }} animate={{ opacity:1, scale:1, y:0 }}
+                      exit={{ opacity:0, scale:0.95, y:-6 }} transition={{ duration:0.15 }}
                       className="absolute right-0 top-10 z-50 w-48 rounded-2xl border py-1.5 shadow-2xl"
-                      style={{ background: '#1a1d2e', borderColor: T.border }}
-                    >
-                      {/* User info */}
-                      <div className="px-3 py-2 mb-1" style={{ borderBottom: `1px solid ${T.border}` }}>
+                      style={{ background: '#1a1d2e', borderColor: T.border }}>
+                      <div className="px-3 py-2 mb-1" style={{ borderBottom:`1px solid ${T.border}` }}>
                         <p className="text-[12px] font-semibold text-white">Admin</p>
                         <p className="text-[11px] text-slate-500">admin@gmail.com</p>
                       </div>
-                      {/* Go to course */}
-                      <button
-                        onClick={() => { setAvatarOpen(false); onBack && onBack() }}
-                        className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all"
-                      >
+                      <button onClick={() => { setAvatarOpen(false); onBack && onBack() }}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all">
                         <ArrowLeft size={13}/> Về trang học
                       </button>
-                      {/* Logout */}
-                      <button
-                        onClick={() => { setAvatarOpen(false); localStorage.removeItem('vfs_token'); onLogout && onLogout() }}
-                        className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
-                      >
+                      <button onClick={() => { setAvatarOpen(false); localStorage.removeItem('vfs_token'); onLogout && onLogout() }}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all">
                         <LogOut size={13}/> Đăng xuất
                       </button>
                     </motion.div>
@@ -1255,33 +1258,20 @@ export function Admin({ onBack, onLogout }) {
           </div>
         </header>
 
-        {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-3">
-              <div className="h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"/>
-              <p className="text-[13px] text-slate-600">Đang tải dữ liệu...</p>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-4">
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-6 py-4 text-center max-w-sm">
-                <p className="text-[13px] text-red-400 font-medium mb-1">Không thể tải dữ liệu</p>
-                <p className="text-[12px] text-red-400/60">{error}</p>
-              </div>
-              <button onClick={fetchData}
-                className="rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-[13px] font-semibold text-white transition-all">
-                Thử lại
-              </button>
-            </div>
-          ) : (
-            <>
-              {page==='overview' && <Overview users={users} chapters={chapters}/>}
-              {page==='users'    && <UserManagement users={users} setUsers={setUsers}/>}
-              {page==='modules'  && <ModuleManagement chapters={chapters} setChapters={setChapters}/>}
-            </>
-          )}
+          {page==='overview' && <Overview/>}
+          {page==='users'    && <UserManagement/>}
+          {page==='modules'  && <ModuleManagement/>}
         </div>
       </div>
     </div>
+  )
+}
+
+export function Admin({ onBack, onLogout }) {
+  return (
+    <QueryClientProvider client={adminQueryClient}>
+      <AdminInner onBack={onBack} onLogout={onLogout}/>
+    </QueryClientProvider>
   )
 }
