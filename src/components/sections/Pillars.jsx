@@ -111,14 +111,14 @@ export function Pillars() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mt-8 flex gap-3 justify-center"
+          className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3"
         >
           {['thong ck 1.png','thong ck 2.png','thong ck 3.png','thong ck 4.png'].map((src, i) => (
             <img
               key={i}
               src={`/${src}`}
               alt=""
-              className="w-1/4 rounded-2xl object-cover shadow-lg"
+              className="w-full rounded-2xl object-cover shadow-lg"
             />
           ))}
         </motion.div>
