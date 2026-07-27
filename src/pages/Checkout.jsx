@@ -171,265 +171,221 @@ export function Checkout({ onBack }) {
 
       {/* ── STEP 2: Checkout ── */}
       {step === 'checkout' && (
-        <div className="relative mx-auto max-w-5xl px-4 py-8">
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-center mb-2 bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">
-            Hoàn tất thanh toán
-          </h2>
-          <p className="text-center text-sm text-slate-400 mb-8">
-            Chào <strong className="text-white">{form.name.toUpperCase()}</strong>, đơn hàng của bạn đã sẵn sàng.
-          </p>
+        <div className="relative mx-auto max-w-2xl px-4 py-8 space-y-5">
+          {/* Header */}
+          <div className="text-center">
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">
+              Hoàn tất thanh toán
+            </h2>
+            <p className="text-sm text-slate-400">
+              Chào <strong className="text-white">{form.name.toUpperCase()}</strong>, đơn hàng của bạn đã sẵn sàng.
+            </p>
+          </div>
 
-          <div className="flex flex-col-reverse md:flex-row gap-6">
-
-            {/* ── Cột trái: đơn hàng + upsell ── */}
-            <div className="flex-1 space-y-4">
-
-              {/* Sản phẩm chính */}
-              <div className="rounded-2xl border border-white/10 bg-[#0f1420] overflow-hidden">
-                <div className="px-4 py-2 border-b border-white/[0.07]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Sản phẩm chính</span>
-                </div>
-                <div className="p-4">
-                  <p className="font-heading font-bold text-white mb-3">VIRAL FREEDOM SYSTEM – Video Editing</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Mã đơn hàng</span>
-                      <span className="text-blue-400 font-mono font-semibold">{orderCode}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Email</span>
-                      <span className="text-white">{form.email}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Giá</span>
-                      <span className="text-blue-400 font-bold">{fmtVND(799000)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Add-on đã chọn */}
-              {ADDONS.filter(a => addOns[a.key]).map(addon => (
-                <div key={addon.key} className="rounded-2xl border border-blue-500/30 bg-blue-500/[0.06] overflow-hidden">
-                  <div className="px-4 py-2 border-b border-blue-500/20">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Đã thêm vào đơn</span>
-                  </div>
-                  <div className="p-4">
-                    <p className="font-heading font-semibold text-white text-sm mb-2">{addon.name}</p>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Giá</span>
-                      <span className="text-blue-400 font-bold">{fmtVND(addon.price)}</span>
-                    </div>
-                    <button
-                      onClick={() => setAddOns(p => ({ ...p, [addon.key]: false }))}
-                      className="mt-2 text-[11px] text-slate-600 hover:text-red-400 transition-colors"
-                    >
-                      ✕ Bỏ khỏi đơn hàng
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              {/* Upsell */}
-              {ADDONS.filter(a => !addOns[a.key]).map(addon => (
-                <div key={addon.key} className="rounded-2xl border border-dashed border-blue-500/40 bg-blue-500/[0.03] p-5">
-                  <p className="text-[11px] font-semibold text-blue-300 mb-3 leading-snug">
-                    Đừng bỏ lỡ sản phẩm dưới đây, giá ưu đãi duy nhất chỉ khi mua kèm VIRAL FREEDOM SYSTEM
-                  </p>
-                  <p className="font-heading font-bold text-white mb-3">{addon.name}</p>
-                  <div className="space-y-2 mb-3">
-                    {addon.paragraphs.map((p, i) => (
-                      <p key={i} className="text-xs text-slate-400 leading-relaxed">{p}</p>
-                    ))}
-                  </div>
-                  <p className="text-xs text-blue-300 font-semibold mb-4 leading-relaxed">{addon.highlight}</p>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-sm text-slate-600 line-through">{fmtVND(addon.originalPrice)}</span>
-                    <span className="font-heading font-bold text-blue-400 text-lg">{fmtVND(addon.price)}</span>
-                    <span className="rounded-full bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-400">
-                      Tiết kiệm {Math.round((1 - addon.price / addon.originalPrice) * 100)}%
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setAddOns(p => ({ ...p, [addon.key]: true }))}
-                    className="w-full rounded-xl bg-gradient-to-r from-blue-700 via-blue-500 to-blue-700 hover:brightness-110 py-3 font-heading font-bold text-white text-sm transition-all hover:-translate-y-0.5 shadow-[0_0_16px_rgba(59,130,246,0.3)]"
+          {/* ── 2 gói add-on nằm ngang hàng ── */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-3">
+              Nâng cấp đơn hàng — ưu đãi chỉ dành riêng hôm nay
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {ADDONS.map(addon => {
+                const sel = addOns[addon.key]
+                const saving = Math.round((1 - addon.price / addon.originalPrice) * 100)
+                return (
+                  <div
+                    key={addon.key}
+                    onClick={() => setAddOns(p => ({ ...p, [addon.key]: !p[addon.key] }))}
+                    className={`relative cursor-pointer rounded-2xl border p-4 flex flex-col gap-2.5 transition-all duration-200 ${
+                      sel
+                        ? 'border-blue-500/50 bg-blue-500/10 shadow-[0_0_24px_rgba(59,130,246,0.12)]'
+                        : 'border-white/10 bg-white/[0.03] hover:border-blue-500/25 hover:bg-white/[0.05]'
+                    }`}
                   >
-                    + Thêm sản phẩm này vào đơn hàng
-                  </button>
-                </div>
-              ))}
+                    {/* Checkbox */}
+                    <div className={`absolute top-3 right-3 h-5 w-5 rounded-full flex items-center justify-center transition-all ${
+                      sel ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'border border-white/20'
+                    }`}>
+                      {sel && (
+                        <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
 
-              {/* Bạn nhận được */}
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] overflow-hidden">
-                <div className="px-5 py-3 border-b border-white/[0.07]">
-                  <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Bạn nhận được tất cả những gì sau đây</p>
-                </div>
-                {[
-                  { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 1: Mindset — Reset tư duy + Roadmap $1,000 đầu tiên' },
-                  { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 2: Kỹ năng — Premiere Pro + After Effects chuẩn quốc tế' },
-                  { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 3: Thu nhập — Tìm client, Cold DM, đàm phán, giữ client dài hạn' },
-                  { tag: 'BONUS',   color: 'text-emerald-400', name: 'Cộng đồng Discord hỗ trợ 24/7' },
-                  { tag: 'PREMIUM', color: 'text-yellow-400',  name: 'Truy cập & update miễn phí trọn đời' },
-                  { tag: 'PREMIUM', color: 'text-yellow-400',  name: 'Call 1-1 miễn phí trực tiếp' },
-                  { tag: 'BONUS',   color: 'text-emerald-400', name: '"The $0 Portfolio Blueprint"' },
-                  { tag: 'BONUS',   color: 'text-emerald-400', name: '"The Rate Raise Script"' },
-                ].map(({ tag, color, name }, i) => (
-                  <div key={i} className="flex items-center gap-3 border-b border-white/[0.05] px-5 py-3 last:border-0">
-                    <span className="text-emerald-400 text-sm flex-shrink-0">✓</span>
-                    <div>
-                      <span className={`text-[10px] font-bold ${color}`}>{tag} </span>
-                      <span className="text-xs text-white">{name}</span>
+                    {/* Saving badge */}
+                    <span className="self-start rounded-full bg-emerald-500/15 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                      -{saving}%
+                    </span>
+
+                    {/* Name */}
+                    <p className="text-xs font-semibold text-white leading-snug pr-6">{addon.name}</p>
+
+                    {/* Pricing */}
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[11px] text-slate-600 line-through">{fmtVND(addon.originalPrice)}</span>
+                      <span className="font-heading font-bold text-blue-400">{fmtVND(addon.price)}</span>
+                    </div>
+
+                    {/* Description snippet */}
+                    <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">{addon.paragraphs[0]}</p>
+
+                    {/* Toggle button */}
+                    <div className={`mt-auto w-full rounded-xl py-2 text-center text-[11px] font-bold transition-all ${
+                      sel
+                        ? 'bg-red-500/10 border border-red-500/20 text-red-400'
+                        : 'bg-blue-600/15 border border-blue-500/25 text-blue-300'
+                    }`}>
+                      {sel ? '✕ Bỏ khỏi đơn' : '+ Thêm vào đơn'}
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Cộng đồng */}
-              <div className="rounded-2xl border border-blue-500/20 bg-blue-900/10 p-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-2">Cộng Đồng Viral Freedom Sẽ Sớm Tăng Giá</p>
-                <p className="text-xs text-slate-400 leading-relaxed">{COMMUNITY_NOTE}</p>
-              </div>
-
-              {/* Testimonials */}
-              <div className="space-y-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Học viên nói gì</p>
-                {[
-                  {
-                    name: 'Nguyễn Minh Tuấn',
-                    role: 'Freelance Video Editor',
-                    avatar: 'MT',
-                    text: 'Trước khi học mình không biết gì về edit, chỉ sau 3 tuần đã nhận được khách hàng đầu tiên từ Instagram. Lộ trình rất rõ ràng và thực tế.',
-                  },
-                  {
-                    name: 'Trần Thị Hương',
-                    role: 'Content Creator',
-                    avatar: 'TH',
-                    text: 'Mình đã thử nhiều khoá khác nhưng đây là khoá duy nhất dạy mình cách tìm client thực sự. Tháng đầu kiếm được 8 triệu từ video editing.',
-                  },
-                  {
-                    name: 'Lê Quang Huy',
-                    role: 'Video Editor - Agency',
-                    avatar: 'QH',
-                    text: 'Chapter 3 về Sales là phần mình thấy giá trị nhất. Giờ mình có 3 client cố định, thu nhập ổn định hơn công việc văn phòng cũ nhiều.',
-                  },
-                ].map(({ name, role, avatar, text }) => (
-                  <div key={name} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-600/30 text-xs font-bold text-blue-300">
-                        {avatar}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-white">{name}</p>
-                        <p className="text-[10px] text-slate-500">{role}</p>
-                      </div>
-                      <div className="ml-auto flex gap-0.5">
-                        {[...Array(5)].map((_, i) => <span key={i} className="text-yellow-400 text-xs">★</span>)}
-                      </div>
-                    </div>
-                    <p className="text-xs text-slate-400 leading-relaxed">"{text}"</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Cam kết hoàn tiền */}
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-900/10 p-5 flex gap-4 items-start">
-                <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xl">
-                  🛡️
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-emerald-400 mb-1">Cam Kết Hoàn Tiền 100%</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Nếu sau <strong className="text-white">7 ngày</strong> học bạn cảm thấy chương trình không phù hợp, chúng tôi sẽ hoàn lại <strong className="text-white">100% học phí</strong> — không hỏi lý do.
-                  </p>
-                </div>
-              </div>
+                )
+              })}
             </div>
+          </div>
 
-            {/* ── Cột phải: QR + bank info (sticky) ── */}
-            <div className="w-full md:w-[290px] flex-shrink-0">
-              <div className="md:sticky md:top-6 rounded-2xl border border-white/10 bg-[#0d1018] p-5 space-y-4">
-                <h3 className="font-heading font-bold text-white text-center text-sm">Quét QR để thanh toán</h3>
+          {/* ── QR Code + Thông tin thanh toán ── */}
+          <div className="rounded-2xl border border-white/10 bg-[#0d1018] p-5">
+            <h3 className="font-heading font-bold text-white text-center text-sm mb-4">Quét QR để thanh toán</h3>
 
-                {/* QR */}
-                <div className="flex justify-center">
-                  <div className="rounded-2xl bg-white p-3 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                    <img
-                      className="h-[160px] w-[160px] rounded-xl"
-                      src={qrUrl}
-                      alt="VietQR"
-                      onError={(e) => {
-                        e.target.parentElement.innerHTML = '<div class="h-[160px] w-[160px] flex flex-col items-center justify-center bg-slate-800 rounded-xl text-slate-400 text-xs text-center p-4"><div class="text-3xl mb-2">📱</div>QR thanh toán</div>'
-                      }}
-                    />
-                  </div>
+            <div className="flex gap-5 items-start">
+              {/* QR */}
+              <div className="flex-shrink-0">
+                <div className="rounded-2xl bg-white p-2.5 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                  <img
+                    className="h-[140px] w-[140px] rounded-xl"
+                    src={qrUrl}
+                    alt="VietQR"
+                    onError={(e) => {
+                      e.target.parentElement.innerHTML = '<div class="h-[140px] w-[140px] flex flex-col items-center justify-center bg-slate-800 rounded-xl text-slate-400 text-xs text-center p-4"><div class="text-3xl mb-1">📱</div>QR thanh toán</div>'
+                    }}
+                  />
                 </div>
+              </div>
 
-                {/* Bank info */}
+              {/* Bank info + total */}
+              <div className="flex-1 min-w-0 space-y-3">
+                {/* Bank rows */}
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-2 text-xs">
                   {[
                     { label: 'Ngân hàng',     value: 'MB Bank',           key: null },
                     { label: 'Số tài khoản',  value: '0368683148',        key: 'stk' },
-                    { label: 'Chủ tài khoản', value: 'LE THANH DAT',      key: null },
-                    { label: 'Số tiền',       value: fmtVND(totalAmount), key: null, highlight: true },
+                    { label: 'Chủ TK',        value: 'LE THANH DAT',      key: null },
                     { label: 'Nội dung CK',   value: noiDung,             key: 'nd' },
-                  ].map(({ label, value, key, highlight }) => (
+                  ].map(({ label, value, key }) => (
                     <div key={label} className="flex items-center justify-between gap-2">
                       <span className="text-slate-500 flex-shrink-0">{label}</span>
                       {key ? (
                         <button onClick={() => copy(value, key)}
-                          className={cn('rounded border px-2 py-0.5 font-mono transition-all',
+                          className={cn('rounded border px-2 py-0.5 font-mono text-[11px] transition-all',
                             copied === key
                               ? 'border-green-500/30 bg-green-500/15 text-green-300'
                               : 'border-slate-700 bg-slate-800 text-white hover:border-blue-500/40')}>
                           {copied === key ? '✓ Copied!' : `${value} ⧉`}
                         </button>
                       ) : (
-                        <span className={cn('font-semibold text-right', highlight ? 'text-blue-400' : 'text-white')}>{value}</span>
+                        <span className="font-semibold text-white text-right">{value}</span>
                       )}
                     </div>
                   ))}
                 </div>
 
-                {/* Đang chờ */}
-                <div className="rounded-xl border border-green-700/30 bg-green-900/20 px-3 py-2.5 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"/>
+                {/* Total */}
+                <div className="rounded-xl border border-blue-500/30 bg-blue-500/[0.08] p-3">
+                  <div className="flex justify-between items-baseline mb-1">
+                    <span className="text-[11px] text-slate-400">Tổng thanh toán</span>
+                    <span className="font-heading font-bold text-blue-400 text-lg">{fmtVND(totalAmount)}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between text-[11px] text-slate-500">
+                      <span>Khoá học chính</span><span>{fmtVND(799000)}</span>
+                    </div>
+                    {addOns.music && (
+                      <div className="flex justify-between text-[11px] text-slate-500">
+                        <span>+ Sound Design</span><span>{fmtVND(299000)}</span>
+                      </div>
+                    )}
+                    {addOns.plugin && (
+                      <div className="flex justify-between text-[11px] text-slate-500">
+                        <span>+ Plugin</span><span>{fmtVND(499000)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Waiting */}
+                <div className="rounded-xl border border-green-700/30 bg-green-900/20 px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0"/>
                     <p className="text-xs font-semibold text-green-300">Đang chờ thanh toán...</p>
                   </div>
                 </div>
-
-                {/* Tổng */}
-                <div className="space-y-2 border-t border-white/[0.07] pt-3 text-sm">
-                  <div className="flex justify-between text-slate-400">
-                    <span>Sản phẩm chính</span>
-                    <span>{fmtVND(799000)}</span>
-                  </div>
-                  {addOns.music && (
-                    <div className="flex justify-between text-slate-400">
-                      <span>Sound Design</span>
-                      <span>{fmtVND(299000)}</span>
-                    </div>
-                  )}
-                  {addOns.plugin && (
-                    <div className="flex justify-between text-slate-400">
-                      <span>Plugin</span>
-                      <span>{fmtVND(499000)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-heading font-bold text-base border-t border-white/[0.07] pt-2">
-                    <span className="text-white">Tổng thanh toán</span>
-                    <span className="text-blue-400">{fmtVND(totalAmount)}</span>
-                  </div>
-                </div>
-
-                <button onClick={() => setStep('form')}
-                  className="w-full text-xs text-slate-600 hover:text-slate-400 transition-colors">
-                  ← Sửa thông tin
-                </button>
               </div>
             </div>
-
           </div>
+
+          {/* ── Bạn nhận được ── */}
+          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] overflow-hidden">
+            <div className="px-5 py-3 border-b border-white/[0.07]">
+              <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Bạn nhận được tất cả</p>
+            </div>
+            {[
+              { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 1: Mindset — Reset tư duy + Roadmap $1,000 đầu tiên' },
+              { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 2: Kỹ năng — Premiere Pro + After Effects chuẩn quốc tế' },
+              { tag: 'CORE',    color: 'text-blue-400',    name: 'Chapter 3: Thu nhập — Tìm client, Cold DM, đàm phán, giữ client dài hạn' },
+              { tag: 'BONUS',   color: 'text-emerald-400', name: 'Cộng đồng Discord hỗ trợ 24/7' },
+              { tag: 'PREMIUM', color: 'text-yellow-400',  name: 'Truy cập & update miễn phí trọn đời' },
+              { tag: 'PREMIUM', color: 'text-yellow-400',  name: 'Call 1-1 miễn phí trực tiếp' },
+              { tag: 'BONUS',   color: 'text-emerald-400', name: '"The $0 Portfolio Blueprint"' },
+              { tag: 'BONUS',   color: 'text-emerald-400', name: '"The Rate Raise Script"' },
+            ].map(({ tag, color, name }, i) => (
+              <div key={i} className="flex items-center gap-3 border-b border-white/[0.05] px-5 py-3 last:border-0">
+                <span className="text-emerald-400 text-sm flex-shrink-0">✓</span>
+                <div>
+                  <span className={`text-[10px] font-bold ${color}`}>{tag} </span>
+                  <span className="text-xs text-white">{name}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Testimonials */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Học viên nói gì</p>
+            {[
+              { name: 'Nguyễn Minh Tuấn', role: 'Freelance Video Editor', avatar: 'MT', text: 'Trước khi học mình không biết gì về edit, chỉ sau 3 tuần đã nhận được khách hàng đầu tiên từ Instagram. Lộ trình rất rõ ràng và thực tế.' },
+              { name: 'Trần Thị Hương',   role: 'Content Creator',        avatar: 'TH', text: 'Mình đã thử nhiều khoá khác nhưng đây là khoá duy nhất dạy mình cách tìm client thực sự. Tháng đầu kiếm được 8 triệu từ video editing.' },
+              { name: 'Lê Quang Huy',     role: 'Video Editor - Agency',  avatar: 'QH', text: 'Chapter 3 về Sales là phần mình thấy giá trị nhất. Giờ mình có 3 client cố định, thu nhập ổn định hơn công việc văn phòng cũ nhiều.' },
+            ].map(({ name, role, avatar, text }) => (
+              <div key={name} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-600/30 text-xs font-bold text-blue-300">{avatar}</div>
+                  <div>
+                    <p className="text-xs font-semibold text-white">{name}</p>
+                    <p className="text-[10px] text-slate-500">{role}</p>
+                  </div>
+                  <div className="ml-auto flex gap-0.5">
+                    {[...Array(5)].map((_, i) => <span key={i} className="text-yellow-400 text-xs">★</span>)}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">"{text}"</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Cam kết hoàn tiền */}
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-900/10 p-5 flex gap-4 items-start">
+            <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xl">🛡️</div>
+            <div>
+              <p className="text-sm font-bold text-emerald-400 mb-1">Cam Kết Hoàn Tiền 100%</p>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Nếu sau <strong className="text-white">7 ngày</strong> học bạn cảm thấy chương trình không phù hợp, chúng tôi sẽ hoàn lại <strong className="text-white">100% học phí</strong> — không hỏi lý do.
+              </p>
+            </div>
+          </div>
+
+          <button onClick={() => setStep('form')} className="w-full text-xs text-slate-600 hover:text-slate-400 transition-colors pb-4">
+            ← Sửa thông tin
+          </button>
         </div>
       )}
     </div>
