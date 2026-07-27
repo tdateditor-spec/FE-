@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 const API          = import.meta.env.VITE_API_URL || 'https://server-pied-kappa.vercel.app'
-const TELEGRAM_URL = 'https://t.me/+jWnmBTQuQ8VkMGY1'
+const DISCORD_URL  = 'https://discord.gg/U3VG5fd9f'
 
 const ADDONS = [
   {
@@ -401,9 +401,9 @@ export function PaymentModal({ open, onClose }) {
               </div>
             </div>
 
-            <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer"
+            <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
               className="block w-full rounded-2xl bg-gradient-to-r from-violet-700 to-violet-500 py-3.5 font-heading font-bold text-white text-sm mb-3 hover:-translate-y-0.5 transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)]">
-              Vào nhóm Telegram →
+              Vào nhóm Discord →
             </a>
             <button onClick={onClose}
               className="w-full rounded-2xl border border-white/10 py-3 text-sm text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all">
