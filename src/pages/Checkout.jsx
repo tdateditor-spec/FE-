@@ -247,77 +247,72 @@ export function Checkout({ onBack }) {
           <div className="rounded-2xl border border-white/10 bg-[#0d1018] p-5">
             <h3 className="font-heading font-bold text-white text-center text-sm mb-4">Quét QR để thanh toán</h3>
 
-            <div className="flex gap-5 items-start">
+            <div className="flex flex-col items-center gap-4">
               {/* QR */}
-              <div className="flex-shrink-0">
-                <div className="rounded-2xl bg-white p-2.5 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                  <img
-                    className="h-[140px] w-[140px] rounded-xl"
-                    src={qrUrl}
-                    alt="VietQR"
-                    onError={(e) => {
-                      e.target.parentElement.innerHTML = '<div class="h-[140px] w-[140px] flex flex-col items-center justify-center bg-slate-800 rounded-xl text-slate-400 text-xs text-center p-4"><div class="text-3xl mb-1">📱</div>QR thanh toán</div>'
-                    }}
-                  />
+              <div className="rounded-2xl bg-white p-3 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                <img
+                  className="h-[180px] w-[180px] rounded-xl"
+                  src={qrUrl}
+                  alt="VietQR"
+                  onError={(e) => {
+                    e.target.parentElement.innerHTML = '<div class="h-[180px] w-[180px] flex flex-col items-center justify-center bg-slate-800 rounded-xl text-slate-400 text-xs text-center p-4"><div class="text-3xl mb-1">📱</div>QR thanh toán</div>'
+                  }}
+                />
+              </div>
+
+              {/* Bank rows */}
+              <div className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-2 text-xs">
+                {[
+                  { label: 'Ngân hàng',     value: 'MB Bank',           key: null },
+                  { label: 'Số tài khoản',  value: '0368683148',        key: 'stk' },
+                  { label: 'Chủ TK',        value: 'LE THANH DAT',      key: null },
+                  { label: 'Nội dung CK',   value: noiDung,             key: 'nd' },
+                ].map(({ label, value, key }) => (
+                  <div key={label} className="flex items-center justify-between gap-2">
+                    <span className="text-slate-500 flex-shrink-0">{label}</span>
+                    {key ? (
+                      <button onClick={() => copy(value, key)}
+                        className={cn('rounded border px-2 py-0.5 font-mono text-[11px] transition-all',
+                          copied === key
+                            ? 'border-green-500/30 bg-green-500/15 text-green-300'
+                            : 'border-slate-700 bg-slate-800 text-white hover:border-blue-500/40')}>
+                        {copied === key ? '✓ Copied!' : `${value} ⧉`}
+                      </button>
+                    ) : (
+                      <span className="font-semibold text-white text-right">{value}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Total */}
+              <div className="w-full rounded-xl border border-blue-500/30 bg-blue-500/[0.08] p-3">
+                <div className="flex justify-between items-baseline mb-1">
+                  <span className="text-[11px] text-slate-400">Tổng thanh toán</span>
+                  <span className="font-heading font-bold text-blue-400 text-lg">{fmtVND(totalAmount)}</span>
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex justify-between text-[11px] text-slate-500">
+                    <span>Khoá học chính</span><span>{fmtVND(799000)}</span>
+                  </div>
+                  {addOns.music && (
+                    <div className="flex justify-between text-[11px] text-slate-500">
+                      <span>+ Sound Design</span><span>{fmtVND(299000)}</span>
+                    </div>
+                  )}
+                  {addOns.plugin && (
+                    <div className="flex justify-between text-[11px] text-slate-500">
+                      <span>+ Plugin</span><span>{fmtVND(499000)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Bank info + total */}
-              <div className="flex-1 min-w-0 space-y-3">
-                {/* Bank rows */}
-                <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-2 text-xs">
-                  {[
-                    { label: 'Ngân hàng',     value: 'MB Bank',           key: null },
-                    { label: 'Số tài khoản',  value: '0368683148',        key: 'stk' },
-                    { label: 'Chủ TK',        value: 'LE THANH DAT',      key: null },
-                    { label: 'Nội dung CK',   value: noiDung,             key: 'nd' },
-                  ].map(({ label, value, key }) => (
-                    <div key={label} className="flex items-center justify-between gap-2">
-                      <span className="text-slate-500 flex-shrink-0">{label}</span>
-                      {key ? (
-                        <button onClick={() => copy(value, key)}
-                          className={cn('rounded border px-2 py-0.5 font-mono text-[11px] transition-all',
-                            copied === key
-                              ? 'border-green-500/30 bg-green-500/15 text-green-300'
-                              : 'border-slate-700 bg-slate-800 text-white hover:border-blue-500/40')}>
-                          {copied === key ? '✓ Copied!' : `${value} ⧉`}
-                        </button>
-                      ) : (
-                        <span className="font-semibold text-white text-right">{value}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Total */}
-                <div className="rounded-xl border border-blue-500/30 bg-blue-500/[0.08] p-3">
-                  <div className="flex justify-between items-baseline mb-1">
-                    <span className="text-[11px] text-slate-400">Tổng thanh toán</span>
-                    <span className="font-heading font-bold text-blue-400 text-lg">{fmtVND(totalAmount)}</span>
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="flex justify-between text-[11px] text-slate-500">
-                      <span>Khoá học chính</span><span>{fmtVND(799000)}</span>
-                    </div>
-                    {addOns.music && (
-                      <div className="flex justify-between text-[11px] text-slate-500">
-                        <span>+ Sound Design</span><span>{fmtVND(299000)}</span>
-                      </div>
-                    )}
-                    {addOns.plugin && (
-                      <div className="flex justify-between text-[11px] text-slate-500">
-                        <span>+ Plugin</span><span>{fmtVND(499000)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Waiting */}
-                <div className="rounded-xl border border-green-700/30 bg-green-900/20 px-3 py-2 text-center">
-                  <div className="flex items-center justify-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0"/>
-                    <p className="text-xs font-semibold text-green-300">Đang chờ thanh toán...</p>
-                  </div>
+              {/* Waiting */}
+              <div className="w-full rounded-xl border border-green-700/30 bg-green-900/20 px-3 py-2 text-center">
+                <div className="flex items-center justify-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0"/>
+                  <p className="text-xs font-semibold text-green-300">Đang chờ thanh toán...</p>
                 </div>
               </div>
             </div>
