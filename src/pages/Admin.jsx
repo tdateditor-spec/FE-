@@ -14,7 +14,7 @@ import {
   Video, Clock, AlertTriangle, Lock, Unlock,
   ChevronDown, ChevronUp, Activity,
   Shield, Bell, Download, X, Check,
-  GraduationCap, ShieldCheck, GripVertical,
+  GraduationCap, ShieldCheck, GripVertical, KeyRound,
 } from 'lucide-react'
 
 const adminQueryClient = new QueryClient({
@@ -338,6 +338,16 @@ function UserManagement() {
     onSettled: () => setActionId(null),
   })
 
+  const resendEmailMutation = useMutation({
+    mutationFn: (id) => api.resendEmail(id),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast.success(res.message || 'Đã tạo mật khẩu mới & gửi email')
+    },
+    onError: (err) => toast.error(err.message || 'Gửi email thất bại'),
+    onSettled: () => setActionId(null),
+  })
+
   const validateUserForm = () => {
     const errs = {}
     if (!form.name.trim()) errs.name = 'Họ tên không được để trống'
@@ -360,6 +370,11 @@ function UserManagement() {
   const toggleLock = (u) => {
     setActionId(u.id)
     toggleLockMutation.mutate({ id: u.id, status: u.status === 'inactive' ? 'active' : 'inactive' })
+  }
+
+  const resendEmail = (u) => {
+    setActionId(u.id)
+    resendEmailMutation.mutate(u.id)
   }
 
   const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setFormError(''); setFieldErrors({}); setModal('add') }
@@ -474,6 +489,10 @@ function UserManagement() {
                               <button onClick={()=>openEdit(u)}
                                 className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
                                 <Edit2 size={13}/>
+                              </button>
+                              <button onClick={()=>resendEmail(u)} title="Tạo mật khẩu mới & gửi email"
+                                className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all">
+                                <KeyRound size={13}/>
                               </button>
                               <button onClick={()=>toggleLock(u)}
                                 className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 const API          = import.meta.env.VITE_API_URL || 'https://server-pied-kappa.vercel.app'
-const DISCORD_URL  = 'https://discord.gg/U3VG5fd9f'
+const DISCORD_URL  = 'https://discord.gg/sNgC444F7v'
 
 const ADDONS = [
   {

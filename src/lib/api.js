@@ -81,6 +81,7 @@ export const api = {
   addUser:     (data) => request('POST', '/api/users', data),
   updateUser:  (id, data) => request('PUT', `/api/users/${id}`, data),
   deleteUser:  (id) => request('DELETE', `/api/users/${id}`),
+  resendEmail: (id) => request('POST', `/api/users/${id}/resend-email`),
 
   // Token helpers
   saveToken: (token, mustChangePassword = false) => {

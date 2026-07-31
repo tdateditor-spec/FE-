@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const DISCORD_URL = 'https://discord.gg/U3VG5fd9f'
+const DISCORD_URL = 'https://discord.gg/sNgC444F7v'
 
 export function ThankYou({ onLogin }) {
   const [email, setEmail] = useState('')
