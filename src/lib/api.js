@@ -72,6 +72,7 @@ export const api = {
   reorderLessons:  (cid, order)      => request('PUT',    `/api/courses/chapters/${cid}/lessons/reorder`, { order }),
 
   // Users (phân trang)
+  getUserStats: () => request('GET', '/api/users/stats'),
   getUsers: ({ page = 1, limit = 10, search = '', status = '' } = {}) => {
     const params = new URLSearchParams({ page, limit })
     if (search) params.set('search', search)

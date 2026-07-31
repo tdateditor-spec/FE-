@@ -142,6 +142,16 @@ function FormField({ label, children, hint }) {
   )
 }
 
+// Giá từng khoá (nghìn đồng) — khớp với backend routes/webhook.js & routes/users.js
+const COURSE_PRICES = { edit: 799, music: 299, plugin: 499 }
+
+// Tổng tiền một học viên đã trả — cộng dồn từng khoá đã đăng ký
+// (học viên cũ chưa có courses thì mặc định tính Video Editing).
+function studentRevenue(u) {
+  const courses = u.courses?.length ? u.courses : ['edit']
+  return courses.reduce((sum, c) => sum + (COURSE_PRICES[c] || 0), 0)
+}
+
 /* ─── Overview ───────────────────────────────────────────────────────────── */
 function Overview() {
   const { data: chapters = [] } = useQuery({
@@ -152,17 +162,23 @@ function Overview() {
     queryKey: ['users', 1, 10, '', ''],
     queryFn: () => api.getUsers({ page: 1, limit: 10 }),
   })
+  const { data: userStats } = useQuery({
+    queryKey: ['userStats'],
+    queryFn: () => api.getUserStats(),
+  })
   const users = usersData?.data || []
 
   const totalLessons = chapters.reduce((s,c)=>s+c.lessons.length, 0)
-  const paid         = users.filter(u=>u.paid).length
-  const active       = users.filter(u=>u.status==='active').length
-  const avgProgress  = users.length ? Math.round(users.reduce((s,u)=>s+u.progress,0)/users.length) : 0
+  const paid         = userStats?.paid ?? users.filter(u=>u.paid).length
+  const active       = userStats?.active ?? users.filter(u=>u.status==='active').length
+  const totalStudents= userStats?.total ?? users.length
+  const avgProgress  = userStats?.avgProgress ?? (users.length ? Math.round(users.reduce((s,u)=>s+u.progress,0)/users.length) : 0)
+  const revenue      = userStats?.revenue ?? users.filter(u=>u.paid).reduce((s,u)=>s+studentRevenue(u), 0)
   const withVideo    = chapters.reduce((s,c)=>s+c.lessons.filter(l=>l.videoUrl).length, 0)
 
   const stats = [
-    { title:'Doanh thu', value:`${paid * 799}K`, sub:`${paid} đã thanh toán`, icon:DollarSign, color:'text-emerald-400', up:true },
-    { title:'Học viên',  value:users.length,      sub:`${active} đang học`,   icon:Users,      color:'text-blue-400',    up:true },
+    { title:'Doanh thu', value:`${revenue}K`, sub:`${paid} đã thanh toán`, icon:DollarSign, color:'text-emerald-400', up:true },
+    { title:'Học viên',  value:totalStudents,  sub:`${active} đang học`,   icon:Users,      color:'text-blue-400',    up:true },
     { title:'Tiến độ TB',value:`${avgProgress}%`, sub:'Toàn bộ học viên',     icon:Activity,   color:'text-violet-400',  up:avgProgress>50 },
     { title:'Bài học',   value:totalLessons,       sub:`${withVideo} có video`, icon:BookOpen,  color:'text-yellow-400',  up:true },
   ]
@@ -253,7 +269,7 @@ function Overview() {
                   <p className="text-[11px] text-slate-600 truncate">{u.email}</p>
                 </div>
                 <span className={`text-[12px] font-semibold flex-shrink-0 ${u.paid ? 'text-emerald-400' : 'text-slate-600'}`}>
-                  {u.paid ? `+799K` : 'Chưa TT'}
+                  {u.paid ? `+${studentRevenue(u)}K` : 'Chưa TT'}
                 </span>
               </div>
             ))}
@@ -276,7 +292,7 @@ function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('')
   const [modal, setModal]       = useState(null)
   const [confirmDel, setDel]    = useState(null)
-  const [form, setForm]         = useState({ name:'', email:'', phone:'', status:'active', paid:false })
+  const [form, setForm]         = useState({ name:'', email:'', phone:'', status:'active', paid:false, courses:[] })
   const [formError, setFormError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
   const [actionId, setActionId] = useState(null)
@@ -377,8 +393,12 @@ function UserManagement() {
     resendEmailMutation.mutate(u.id)
   }
 
-  const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false }); setFormError(''); setFieldErrors({}); setModal('add') }
-  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid }); setFormError(''); setFieldErrors({}); setModal(u) }
+  const openAdd  = () => { setForm({ name:'', email:'', phone:'', status:'active', paid:false, courses:[] }); setFormError(''); setFieldErrors({}); setModal('add') }
+  const openEdit = u  => { setForm({ name:u.name, email:u.email, phone:u.phone||'', status:u.status, paid:u.paid, courses:u.courses||[] }); setFormError(''); setFieldErrors({}); setModal(u) }
+  const toggleCourse = key => setForm(p => ({
+    ...p,
+    courses: p.courses.includes(key) ? p.courses.filter(c => c !== key) : [...p.courses, key],
+  }))
   const onStatusFilter = v => { setStatusFilter(v); setCurPage(1) }
   const saving = addUserMutation.isPending || updateUserMutation.isPending
 
@@ -584,6 +604,31 @@ function UserManagement() {
                 </div>
                 <span className="text-[13px] text-slate-300">Đã thanh toán</span>
               </label>
+              <FormField label="Khoá học đăng ký">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key:'edit',   label:'Video Editing', color:'blue'    },
+                    { key:'music',  label:'Sound Design',  color:'emerald' },
+                    { key:'plugin', label:'Plugin',        color:'violet'  },
+                  ].map(c => {
+                    const active = form.courses.includes(c.key)
+                    const activeClasses = {
+                      blue:    'border-blue-500/40 bg-blue-500/15 text-blue-400',
+                      emerald: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400',
+                      violet:  'border-violet-500/40 bg-violet-500/15 text-violet-400',
+                    }
+                    return (
+                      <button key={c.key} type="button" onClick={()=>toggleCourse(c.key)}
+                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-all ${
+                          active ? activeClasses[c.color] : 'border-white/10 bg-white/[0.03] text-slate-500 hover:text-slate-300'
+                        }`}>
+                        {active && <Check size={11}/>}
+                        {c.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </FormField>
               {formError && (
                 <motion.div initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }}
                   className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5">
