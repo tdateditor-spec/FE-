@@ -15,6 +15,8 @@ import {
   ChevronLeft,
   User,
   ShieldCheck,
+  Menu,
+  X,
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -315,6 +317,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
   const [doneIds, setDoneIds] = useState(new Set());
   const [openChapters, setOpenChapters] = useState({});
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user] = useState(() => {
     try {
       const token = localStorage.getItem('vfs_token');
@@ -402,6 +405,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
 
   const selectLesson = (l) => {
     setActiveLesson(l);
+    setSidebarOpen(false);
   };
   const markDone = () => {
     setDoneIds((prev) => new Set([...prev, activeLesson.id]));
@@ -422,9 +426,19 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0f1117]">
+      {/* Backdrop — chỉ hiện trên mobile khi sidebar mở */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ── LEFT SIDEBAR — course curriculum ── */}
       <aside
-        className="flex flex-col w-[300px] flex-shrink-0 border-r border-white/[0.07]"
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col w-[85vw] max-w-[300px] flex-shrink-0 border-r border-white/[0.07] transition-transform duration-300 ease-out lg:static lg:z-auto lg:w-[300px] lg:max-w-none lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
         style={{ background: '#141520' }}
       >
         {/* Top: logo + back */}
@@ -440,6 +454,12 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
               90-Day Challenge
             </p>
           </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-colors"
+          >
+            <X size={15} />
+          </button>
         </div>
 
         {/* Progress bar */}
@@ -599,35 +619,41 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
       {/* ── MAIN CONTENT ── */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex-shrink-0 flex items-center justify-between px-5 py-2.5 border-b border-white/[0.07] bg-[#0f1117]">
-          {/* Breadcrumb */}
+        <header className="flex-shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 py-2.5 border-b border-white/[0.07] bg-[#0f1117]">
+          {/* Menu (mobile) + Breadcrumb */}
           <div className="flex items-center gap-2 text-[12px] min-w-0">
-            <span className="text-slate-600">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white transition-colors"
+            >
+              <Menu size={15} />
+            </button>
+            <span className="hidden sm:inline text-slate-600 truncate">
               {activeChapter?.title || 'Khoá học'}
             </span>
-            <ChevronRight size={12} className="text-slate-700 flex-shrink-0" />
-            <span className="text-slate-300 font-medium truncate max-w-[240px]">
+            <ChevronRight size={12} className="hidden sm:inline text-slate-700 flex-shrink-0" />
+            <span className="text-slate-300 font-medium truncate max-w-[140px] sm:max-w-[240px]">
               {activeLesson?.title}
             </span>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             {/* Prev / Next */}
             {prevLesson && (
               <button
                 onClick={() => selectLesson(prevLesson)}
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-4 py-1.5 text-[12px] text-slate-400 hover:text-white transition-all"
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-2.5 sm:px-4 py-1.5 text-[12px] text-slate-400 hover:text-white transition-all"
               >
-                <ChevronLeft size={13} /> Trước
+                <ChevronLeft size={13} /> <span className="hidden sm:inline">Trước</span>
               </button>
             )}
             {nextLesson && (
               <button
                 onClick={() => selectLesson(nextLesson)}
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-4 py-1.5 text-[12px] text-slate-400 hover:text-white transition-all"
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-2.5 sm:px-4 py-1.5 text-[12px] text-slate-400 hover:text-white transition-all"
               >
-                Tiếp <ChevronRight size={13} />
+                <span className="hidden sm:inline">Tiếp</span> <ChevronRight size={13} />
               </button>
             )}
 
@@ -789,9 +815,9 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
           </div>
 
           {/* Content area */}
-          <div className="px-6 py-5 max-w-4xl">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 max-w-4xl">
             {/* Lesson title + mark done */}
-            <div className="flex items-start justify-between gap-4 mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-5">
               <div className="min-w-0">
                 {activeChapter && (
                   <span
@@ -800,7 +826,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
                     {activeChapter.title}
                   </span>
                 )}
-                <h1 className="text-lg font-semibold text-white leading-snug">
+                <h1 className="text-base sm:text-lg font-semibold text-white leading-snug">
                   {activeLesson?.title}
                 </h1>
                 <p className="flex items-center gap-3 mt-1 text-[12px] text-slate-500">
@@ -818,12 +844,12 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
               {!doneIds.has(activeLesson?.id) ? (
                 <button
                   onClick={markDone}
-                  className="flex-shrink-0 flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all shadow-lg shadow-emerald-900/30"
+                  className="flex-shrink-0 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all shadow-lg shadow-emerald-900/30 w-full sm:w-auto"
                 >
                   <CheckCircle2 size={14} /> Hoàn thành
                 </button>
               ) : (
-                <div className="flex-shrink-0 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-2.5 text-[13px] font-semibold text-emerald-400">
+                <div className="flex-shrink-0 flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-2.5 text-[13px] font-semibold text-emerald-400 w-full sm:w-auto">
                   <CheckCircle2 size={14} /> Đã xong
                 </div>
               )}
@@ -833,7 +859,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
             <TabContent lesson={activeLesson} />
 
             {/* Prev / Next nav cards */}
-            <div className="mt-8 flex gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
               {prevLesson ? (
                 <button
                   onClick={() => selectLesson(prevLesson)}
