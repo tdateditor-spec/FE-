@@ -14,7 +14,7 @@ import {
   Video, Clock, AlertTriangle, Lock, Unlock,
   ChevronDown, ChevronUp, Activity,
   Shield, Bell, Download, X, Check,
-  GraduationCap, ShieldCheck, GripVertical, KeyRound,
+  GraduationCap, ShieldCheck, GripVertical, KeyRound, Menu,
 } from 'lucide-react'
 
 const adminQueryClient = new QueryClient({
@@ -446,7 +446,7 @@ function UserManagement() {
               <div className="h-5 w-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"/>
             </div>
           ) : (
-            <table className="w-full text-[13px]">
+            <table className="w-full min-w-[840px] text-[13px]">
               <thead>
                 <tr style={{ borderBottom:`1px solid ${T.border}` }}>
                   {['Học viên','SĐT','Trạng thái','Tiến độ','Thanh toán','Khoá học','Ngày TG',''].map(h => (
@@ -534,12 +534,12 @@ function UserManagement() {
           )}
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3" style={{ borderTop:`1px solid ${T.border}` }}>
+        <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-3" style={{ borderTop:`1px solid ${T.border}` }}>
           <p className="text-[12px] text-slate-500">
             Hiển thị <span className="text-white font-medium">{data.length}</span> / <span className="text-white font-medium">{pagination.total || data.length}</span> học viên
           </p>
           {pagination.totalPages > 1 && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <button onClick={()=>setCurPage(p=>p-1)} disabled={!pagination.hasPrev}
                 className="h-7 px-3 rounded-xl text-[12px] border transition-all disabled:opacity-30 text-slate-400 hover:text-white hover:bg-white/[0.06]"
                 style={{ borderColor: T.border }}>← Trước</button>
@@ -797,29 +797,31 @@ function SortableChapterItem({ ch, ci, openCh, setOpenCh, onEditCh, onDelCh, onA
                     <button onClick={()=>onAddLesson(ch)} className="text-blue-400 hover:underline">Thêm bài học</button>
                   </p>
                 ) : (
-                  <DndContext sensors={lessonSensors} collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd}>
-                    <SortableContext items={ch.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
-                      <table className="w-full text-[13px]">
-                        <thead>
-                          <tr style={{ borderBottom:`1px solid ${T.border}` }}>
-                            {['','#','Tên bài học','Thời lượng','Video','Loại',''].map(h=>(
-                              <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600">{h}</th>
+                  <div className="overflow-x-auto">
+                    <DndContext sensors={lessonSensors} collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd}>
+                      <SortableContext items={ch.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                        <table className="w-full min-w-[560px] text-[13px]">
+                          <thead>
+                            <tr style={{ borderBottom:`1px solid ${T.border}` }}>
+                              {['','#','Tên bài học','Thời lượng','Video','Loại',''].map(h=>(
+                                <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {ch.lessons.map((l, li) => (
+                              <SortableLessonRow
+                                key={l.id} lesson={l} li={li} totalLessons={ch.lessons.length}
+                                onEdit={l => onEditLesson(ch, l)}
+                                onDelete={l => onDelLesson(ch, l)}
+                                actionId={actionId}
+                              />
                             ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {ch.lessons.map((l, li) => (
-                            <SortableLessonRow
-                              key={l.id} lesson={l} li={li} totalLessons={ch.lessons.length}
-                              onEdit={l => onEditLesson(ch, l)}
-                              onDelete={l => onDelLesson(ch, l)}
-                              actionId={actionId}
-                            />
-                          ))}
-                        </tbody>
-                      </table>
-                    </SortableContext>
-                  </DndContext>
+                          </tbody>
+                        </table>
+                      </SortableContext>
+                    </DndContext>
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -1207,6 +1209,7 @@ function getAdminPage() {
 function AdminInner({ onBack, onLogout }) {
   const [page, setPage]         = useState(getAdminPage)
   const [avatarOpen, setAvatarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     const handler = () => setPage(getAdminPage())
@@ -1217,6 +1220,7 @@ function AdminInner({ onBack, onLogout }) {
   const navigate = (id) => {
     window.history.pushState({}, '', ROUTE_BY_ID[id] || '/admin')
     setPage(id)
+    setSidebarOpen(false)
   }
 
   const navItems = [
@@ -1231,16 +1235,29 @@ function AdminInner({ onBack, onLogout }) {
     <div className="flex h-screen w-full overflow-hidden" style={{ background: T.bg, fontFamily:'Inter,sans-serif' }}>
       <Toaster position="bottom-right" richColors theme="dark" />
 
+      {/* Backdrop — chỉ hiện trên mobile khi sidebar mở */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={()=>setSidebarOpen(false)}/>
+      )}
+
       {/* Sidebar */}
-      <aside className="flex flex-col w-[240px] flex-shrink-0" style={{ background: T.sidebar, borderRight:`1px solid ${T.border}` }}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col w-[80vw] max-w-[240px] flex-shrink-0 transition-transform duration-300 ease-out lg:static lg:z-auto lg:w-[240px] lg:max-w-none lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        style={{ background: T.sidebar, borderRight:`1px solid ${T.border}` }}>
         <div className="flex items-center gap-2.5 px-4 py-3.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-600 flex-shrink-0">
             <ShieldCheck size={15} className="text-white"/>
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-[13px] font-semibold text-white leading-tight">VFS Admin</p>
             <p className="text-[10px] text-slate-600">Quản trị hệ thống</p>
           </div>
+          <button onClick={()=>setSidebarOpen(false)}
+            className="lg:hidden flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-colors">
+            <X size={15}/>
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
@@ -1277,13 +1294,17 @@ function AdminInner({ onBack, onLogout }) {
 
       {/* Main */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <header className="flex-shrink-0 flex items-center justify-between px-5 py-2.5" style={{ borderBottom:`1px solid ${T.border}`, background: T.bg }}>
-          <div className="flex items-center gap-2 text-[12px]">
-            <span className="text-slate-600">VFS Admin</span>
-            <span className="text-slate-700">/</span>
-            <span className="text-slate-300 font-medium">{navItems.find(i=>i.id===page)?.label || 'Dashboard'}</span>
+        <header className="flex-shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 py-2.5" style={{ borderBottom:`1px solid ${T.border}`, background: T.bg }}>
+          <div className="flex items-center gap-2 text-[12px] min-w-0">
+            <button onClick={()=>setSidebarOpen(true)}
+              className="lg:hidden flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white transition-colors">
+              <Menu size={15}/>
+            </button>
+            <span className="hidden sm:inline text-slate-600">VFS Admin</span>
+            <span className="hidden sm:inline text-slate-700">/</span>
+            <span className="text-slate-300 font-medium truncate">{navItems.find(i=>i.id===page)?.label || 'Dashboard'}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
               <Bell size={15}/>
             </button>
@@ -1321,7 +1342,7 @@ function AdminInner({ onBack, onLogout }) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {page==='overview' && <Overview/>}
           {page==='users'    && <UserManagement/>}
           {page==='modules'  && <ModuleManagement/>}
