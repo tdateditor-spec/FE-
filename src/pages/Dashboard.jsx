@@ -92,11 +92,61 @@ function getEmbedUrl(url) {
 }
 
 
+/* ─── Watermark chống quay màn hình ──────────────────────────────────────────
+   Web không thể chặn quay màn hình ở cấp hệ điều hành, nên đây là biện pháp
+   răn đe: đè tên/email học viên + giờ thực lên video, vị trí đổi liên tục để
+   khó crop/che — nếu clip bị quay lại và rao bán, watermark lộ danh tính. ── */
+function Watermark({ text }) {
+  const positions = [
+    { top: '6%', left: '4%' },
+    { top: '6%', right: '4%' },
+    { bottom: '8%', left: '4%' },
+    { bottom: '8%', right: '4%' },
+  ];
+  const [idx, setIdx] = useState(0);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const moveTimer = setInterval(() => {
+      setIdx((i) => (i + 1) % positions.length);
+    }, 6000);
+    const clockTimer = setInterval(() => setNow(new Date()), 30000);
+    return () => {
+      clearInterval(moveTimer);
+      clearInterval(clockTimer);
+    };
+  }, []);
+
+  if (!text) return null;
+  const pos = positions[idx];
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+
+  return (
+    <div
+      className="absolute select-none pointer-events-none transition-all duration-[1500ms] ease-in-out"
+      style={{
+        ...pos,
+        zIndex: 20,
+        color: 'rgba(255,255,255,0.4)',
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.03em',
+        textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {text} · {hh}:{mm}
+    </div>
+  );
+}
+
 /* ─── Video Player ────────────────────────────────────────────────────────── */
-function VideoPlayer({ lesson, displayDuration, scrollRef }) {
+function VideoPlayer({ lesson, displayDuration, scrollRef, watermarkText }) {
   const [playing, setPlaying] = useState(false);
   const iframeRef = useRef(null);
   const overlayRef = useRef(null);
+  const containerRef = useRef(null);
   const embedUrl = getEmbedUrl(lesson?.videoUrl);
   const thumb = getThumbUrl(lesson?.videoUrl);
   const isDrive = embedUrl?.includes('drive.google.com');
@@ -105,6 +155,28 @@ function VideoPlayer({ lesson, displayDuration, scrollRef }) {
     if (iframeRef.current && embedUrl) iframeRef.current.src = embedUrl;
     setPlaying(true);
   };
+
+  // Khi người dùng bấm nút fullscreen trong player (YouTube/Drive), trình duyệt
+  // chỉ phóng to <iframe> — watermark (nằm ngoài iframe) sẽ biến mất. Bắt sự
+  // kiện này và chuyển fullscreen sang cả khối chứa để watermark theo cùng.
+  useEffect(() => {
+    const retarget = () => {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsEl && fsEl === iframeRef.current && containerRef.current) {
+        (document.exitFullscreen?.() || document.webkitExitFullscreen?.())
+          ?.then?.(() => {
+            const el = containerRef.current;
+            (el.requestFullscreen?.() || el.webkitRequestFullscreen?.())?.catch?.(() => {});
+          });
+      }
+    };
+    document.addEventListener('fullscreenchange', retarget);
+    document.addEventListener('webkitfullscreenchange', retarget);
+    return () => {
+      document.removeEventListener('fullscreenchange', retarget);
+      document.removeEventListener('webkitfullscreenchange', retarget);
+    };
+  }, []);
 
   // Khi đang play, overlay trong suốt nằm trên iframe để bắt wheel event
   // rồi forward lên scroll container — tránh iframe YouTube nuốt scroll
@@ -122,9 +194,10 @@ function VideoPlayer({ lesson, displayDuration, scrollRef }) {
   // Google Drive: hiện iframe thẳng
   if (isDrive && embedUrl) {
     return (
-      <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
-        <iframe src={embedUrl} className="absolute inset-0 w-full h-full"
-          frameBorder="0" allow="autoplay" allowFullScreen title={lesson?.title} />
+      <div ref={containerRef} className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
+        <iframe ref={iframeRef} src={embedUrl} className="absolute inset-0 w-full h-full"
+          frameBorder="0" allow="autoplay; fullscreen" allowFullScreen title={lesson?.title} />
+        <Watermark text={watermarkText} />
         {displayDuration && (
           <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-[11px] text-slate-300 pointer-events-none">
             <Clock size={10} />{displayDuration}
@@ -135,7 +208,7 @@ function VideoPlayer({ lesson, displayDuration, scrollRef }) {
   }
 
   return (
-    <div className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
+    <div ref={containerRef} className="relative w-full bg-black overflow-hidden" style={{ aspectRatio: '16/9' }}>
 
       {/* Iframe */}
       {embedUrl && (
@@ -144,12 +217,14 @@ function VideoPlayer({ lesson, displayDuration, scrollRef }) {
           src=""
           className="absolute inset-0 w-full h-full"
           frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowFullScreen
           title={lesson?.title}
           style={{ display: playing ? 'block' : 'none' }}
         />
       )}
+
+      <Watermark text={watermarkText} />
 
       {/* Overlay trong suốt khi đang play — bắt scroll, nhường click cho iframe */}
       {playing && (
@@ -811,6 +886,7 @@ export function Dashboard({ onLogout, onAdmin, onProfile }) {
               key={activeLesson?.id}
               displayDuration={lessonDuration}
               scrollRef={mainScrollRef}
+              watermarkText={user ? `${user.name} · ${user.email}` : ''}
             />
           </div>
 
